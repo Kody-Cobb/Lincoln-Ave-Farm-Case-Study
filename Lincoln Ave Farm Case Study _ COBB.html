@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lincoln Ave Farm — Parcel Disaggregation Strategy · IFC Core Fund</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1F2D;--navy-mid:#1A3346;--navy-light:#24465E;
+  --gold:#C8A96E;--gold-light:#E2C99A;
+  --cream:#F5F0E8;--white:#FDFCFA;
+  --text:#1C2B38;--muted:#5A6B77;--border:#D8CFC0;
+  --c-nuts:#8B2020;--c-nuts-bg:#FDF0EE;--c-nuts-border:#D4836A;
+  --c-peach:#2A5C3F;--c-peach-bg:#EBF6F0;--c-peach-border:#6BB88A;
+  --c-open:#1A4A7A;--c-open-bg:#EEF4FB;--c-open-border:#85B7EB;
+  --c-total:#534AB7;--c-total-bg:#EEEDFE;--c-total-border:#AFA9EC;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);font-size:14px;line-height:1.65}
+
+/* HEADER */
+.page-header{background:var(--navy);padding:0}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:18px 48px;border-bottom:1px solid var(--navy-light)}
+.logo-text{font-family:'EB Garamond',serif;font-size:22px;font-weight:500;color:var(--white);letter-spacing:.01em}
+.logo-divider{width:1px;height:18px;background:var(--navy-light);display:inline-block;margin:0 12px;vertical-align:middle}
+.logo-sub{font-size:11px;font-weight:300;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase}
+.header-meta{text-align:right;font-size:11px;color:rgba(255,255,255,.5)}
+.header-hero{padding:28px 48px 24px}
+.property-name{font-family:'EB Garamond',serif;font-size:34px;font-weight:500;color:var(--white);margin-bottom:4px}
+.property-sub{font-size:12px;color:var(--gold-light);letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
+.header-stats{display:flex;gap:28px;flex-wrap:wrap}
+.stat-item{display:flex;flex-direction:column;gap:2px}
+.stat-label{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em}
+.stat-value{font-size:17px;font-family:'EB Garamond',serif;color:var(--white);font-weight:500}
+.stat-unit{font-size:11px;color:rgba(255,255,255,.45);margin-left:2px}
+
+/* THESIS BANNER */
+.thesis-banner{background:var(--c-total-bg);border-top:3px solid var(--c-total-border);border-bottom:1px solid var(--c-total-border);padding:18px 48px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.thesis-badge{background:var(--navy);color:var(--gold-light);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:2px;white-space:nowrap}
+.thesis-headline{font-family:'EB Garamond',serif;font-size:17px;color:var(--navy);font-style:italic;flex:1;padding:0 16px}
+.thesis-note{font-size:11px;color:var(--muted);max-width:300px;text-align:right;font-style:italic}
+
+/* MAIN */
+.main{max-width:1140px;margin:0 auto;padding:36px 48px 80px}
+
+/* PARCEL CARDS ROW */
+.parcels-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:36px}
+.parcel-card{border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.parcel-head{padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.08)}
+.parcel-tag{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;display:block}
+.parcel-name{font-family:'EB Garamond',serif;font-size:16px;font-weight:500}
+.parcel-action{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:2px;display:inline-block;margin-top:4px}
+.parcel-body{background:var(--white);padding:12px 14px}
+.p-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;font-size:12px}
+.p-label{color:var(--muted)}
+.p-val{font-weight:500;color:var(--text)}
+.p-divider{height:.5px;background:var(--border);margin:8px 0}
+.p-total-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.p-total-val{font-family:'EB Garamond',serif;font-size:20px;font-weight:500}
+
+/* NUTS */
+.parcel-card.nuts .parcel-head{background:var(--c-nuts-bg);border-color:#E8C4B8}
+.parcel-card.nuts .parcel-tag{color:var(--c-nuts)}
+.parcel-card.nuts .parcel-name{color:var(--c-nuts)}
+.parcel-card.nuts .parcel-action{background:var(--c-nuts);color:#fff}
+.parcel-card.nuts .p-total-val{color:var(--c-nuts)}
+/* PEACH */
+.parcel-card.peach .parcel-head{background:var(--c-peach-bg);border-color:#B8DAC4}
+.parcel-card.peach .parcel-tag{color:var(--c-peach)}
+.parcel-card.peach .parcel-name{color:var(--c-peach)}
+.parcel-card.peach .parcel-action{background:var(--c-peach);color:#fff}
+.parcel-card.peach .p-total-val{color:var(--c-peach)}
+/* OPEN */
+.parcel-card.open .parcel-head{background:var(--c-open-bg);border-color:#B5D4F4}
+.parcel-card.open .parcel-tag{color:var(--c-open)}
+.parcel-card.open .parcel-name{color:var(--c-open)}
+.parcel-card.open .parcel-action{background:var(--c-open);color:#fff}
+.parcel-card.open .p-total-val{color:var(--c-open)}
+/* TOTAL */
+.parcel-card.total .parcel-head{background:var(--navy);border-color:var(--navy-mid)}
+.parcel-card.total .parcel-tag{color:var(--gold-light)}
+.parcel-card.total .parcel-name{color:var(--white)}
+.parcel-card.total .p-total-val{color:var(--navy)}
+.parcel-card.total .parcel-action{background:var(--gold);color:var(--navy)}
+
+/* SECTION */
+.section{margin-bottom:44px}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.section-number{font-size:10px;color:var(--gold);font-weight:500;letter-spacing:.1em;text-transform:uppercase;min-width:20px}
+.section-title{font-family:'EB Garamond',serif;font-size:20px;font-weight:500;color:var(--navy);letter-spacing:-.01em}
+
+/* MAP */
+#property-map{height:440px;border-radius:4px;border:1px solid var(--border);margin-bottom:0}
+.map-legend{display:flex;flex-wrap:wrap;gap:12px;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;font-size:11px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-swatch{width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.15)}
+
+/* MODEL */
+.model-tabs{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border)}
+.model-tab{padding:9px 20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:3px 3px 0 0;color:var(--muted);background:transparent;transition:.15s;letter-spacing:.02em}
+.model-tab.active-nuts{background:var(--c-nuts-bg);color:var(--c-nuts);border-color:#E8C4B8;border-bottom-color:var(--c-nuts-bg)}
+.model-tab.active-peach{background:var(--c-peach-bg);color:var(--c-peach);border-color:#B8DAC4;border-bottom-color:var(--c-peach-bg)}
+.model-tab.active-open{background:var(--c-open-bg);color:var(--c-open);border-color:#B5D4F4;border-bottom-color:var(--c-open-bg)}
+.model-tab.active-total{background:var(--c-total-bg);color:var(--c-total);border-color:var(--c-total-border);border-bottom-color:var(--c-total-bg)}
+.model-tab:hover:not(.active-nuts):not(.active-peach):not(.active-open):not(.active-total){background:var(--cream);color:var(--text)}
+
+.model-panel{display:none;border:1px solid var(--border);border-top:none;background:var(--white);border-radius:0 0 4px 4px;padding:20px}
+.model-panel.visible{display:block}
+
+.model-grid{display:grid;grid-template-columns:280px 1fr;gap:24px}
+.controls{display:flex;flex-direction:column;gap:14px}
+.ctrl-group{display:flex;flex-direction:column;gap:4px}
+.ctrl-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
+.ctrl-value{font-size:13px;font-weight:500;color:var(--navy)}
+.assume-tag{font-size:9px;padding:1px 5px;border-radius:2px;font-weight:400;letter-spacing:.02em}
+.assume-assumed{background:#EDE8F5;color:#4A2880}
+.assume-confirmed{background:#EBF4EE;color:#2A5C3F}
+.assume-pending{background:#FDF5E6;color:#7A5010}
+
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:#D8CFC0;border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--navy);cursor:pointer;border:2px solid var(--white);box-shadow:0 0 0 1px var(--navy)}
+.range-ends{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:1px}
+
+select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:3px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);background:var(--white);cursor:pointer;outline:none}
+
+.outputs{display:flex;flex-direction:column;gap:0}
+.out-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:#F5F0E8;padding:7px 14px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+.out-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid #EDE8E0}
+.out-row:last-child{border-bottom:none}
+.out-label{font-size:12px;color:var(--muted)}
+.out-val{font-family:'EB Garamond',serif;font-size:18px;font-weight:500;color:var(--navy)}
+.out-val.pos{color:var(--c-peach)}
+.out-val.neg{color:var(--c-nuts)}
+.out-val.neu{color:#7A5010}
+.out-val.purple{color:var(--c-total)}
+
+.verdict-box{margin-top:14px;padding:12px 14px;border-radius:4px;font-size:12px;line-height:1.55}
+
+/* SUMMARY TABLE */
+.summary-table{width:100%;border-collapse:collapse;font-size:13px}
+.summary-table th{background:var(--navy);color:rgba(255,255,255,.65);font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:.07em;padding:9px 14px;text-align:left}
+.summary-table td{padding:10px 14px;border-bottom:1px solid #EDE8E0;vertical-align:middle}
+.summary-table tr:last-child td{border-bottom:none}
+.summary-table .total-row td{background:#F0EBE0;font-weight:500;border-top:1px solid var(--border)}
+.summary-table tr:hover td{background:#F8F5F0}
+.action-pill{display:inline-block;font-size:10px;padding:3px 9px;border-radius:2px;font-weight:500;letter-spacing:.04em;white-space:nowrap}
+.pill-sell{background:var(--c-nuts-bg);color:var(--c-nuts);border:1px solid var(--c-nuts-border)}
+.pill-hold{background:var(--c-peach-bg);color:var(--c-peach);border:1px solid var(--c-peach-border)}
+.pill-convert{background:var(--c-open-bg);color:var(--c-open);border:1px solid var(--c-open-border)}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:24px;margin:8px 0}
+.timeline::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:1.5px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:18px}
+.tl-item::before{content:'';position:absolute;left:-21px;top:5px;width:9px;height:9px;border-radius:50%;border:2px solid var(--white);box-shadow:0 0 0 1.5px var(--border)}
+.tl-item.sell::before{background:var(--c-nuts);box-shadow:0 0 0 1.5px var(--c-nuts)}
+.tl-item.hold::before{background:var(--c-peach);box-shadow:0 0 0 1.5px var(--c-peach)}
+.tl-item.convert::before{background:var(--c-open);box-shadow:0 0 0 1.5px var(--c-open)}
+.tl-year{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+.tl-body{font-size:13px;color:var(--text);line-height:1.5}
+
+/* NARRATIVE */
+.narrative p{font-size:13.5px;line-height:1.75;color:var(--text);margin-bottom:12px}
+.narrative strong{font-weight:500;color:var(--navy)}
+.callout{border-left:3px solid var(--gold);background:var(--white);padding:13px 16px;margin:14px 0;border-radius:0 4px 4px 0;font-size:13px;color:var(--text);line-height:1.6}
+.callout.nuts{border-color:var(--c-nuts-border);background:var(--c-nuts-bg)}
+.callout.peach{border-color:var(--c-peach-border);background:var(--c-peach-bg)}
+.callout.open{border-color:var(--c-open-border);background:var(--c-open-bg)}
+
+/* QUESTIONS */
+.q-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.q-list li{display:flex;gap:10px;padding:12px 14px;background:var(--white);border:1px solid var(--border);border-radius:4px;font-size:13px}
+.q-num{font-family:'EB Garamond',serif;font-size:15px;color:var(--gold);font-weight:500;min-width:18px;padding-top:1px}
+
+/* FOOTER */
+.page-footer{background:var(--navy);padding:18px 48px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-top">
+    <div>
+      <span class="logo-text">Intl. Farming</span>
+      <span class="logo-divider"></span>
+      <span class="logo-sub">Core Fund · Parcel Disaggregation Strategy · v13 — Proceeds Alignment</span>
+    </div>
+    <div class="header-meta">Prepared by Kody Cobb · April 2026 · Confidential</div>
+  </div>
+  <div class="header-hero">
+    <div class="property-name">Lincoln Ave Farm</div>
+    <div class="property-sub">Fresno County, California · McMullin Area GSA · Kings Subbasin</div>
+    <div class="header-stats">
+      <div class="stat-item"><span class="stat-label">Gross Acres</span><span class="stat-value">1,300</span></div>
+      <div class="stat-item"><span class="stat-label">Tillable Acres</span><span class="stat-value">1,190</span></div>
+      <div class="stat-item"><span class="stat-label">Planted Acres</span><span class="stat-value">800</span></div>
+      <div class="stat-item"><span class="stat-label">2026 Est. Rent</span><span class="stat-value">$1.09<span class="stat-unit">M</span></span></div>
+      <div class="stat-item"><span class="stat-label">Parcels</span><span class="stat-value">3</span></div>
+      <div class="stat-item"><span class="stat-label">Water</span><span class="stat-value" style="font-size:13px;padding-top:3px;">Groundwater Only</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="thesis-banner">
+  <span class="thesis-badge">Strategy: Disaggregate &amp; Optimize</span>
+  <span class="thesis-headline">"The sum of the parts is greater than the whole" — sell in more pieces than the original buy</span>
+  <span class="thesis-note">Three parcels. Three strategies. Three buyer pools. Confirmed basis: $18,527,134 (6/30/2022).</span>
+</div>
+
+<main class="main">
+
+<!-- AT-A-GLANCE SUMMARY -->
+<div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:28px">
+  <div style="background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-family:'EB Garamond',serif;font-size:16px;color:var(--white)">At-a-glance — base case returns</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">$18,527,134 cost basis · Acquired 6/30/2022 · Assumptions per Section 04 rationale table</div>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,.35);text-align:right">Interactive model in Section 03<br>adjusts all assumptions dynamically</div>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#F5F0E8">
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">Case</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">Total proceeds</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">MOIC</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">Portfolio IRR</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">Gain / (loss)</th>
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)">Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:11px 14px;color:var(--text)">
+            <div style="font-weight:500">Hold through 2032</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">No SGMA action, all leases to expiry</div>
+          </td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:var(--muted)">~$14–17M</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:var(--muted)">~0.9–1.1x</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:#8B2020">~0–2%</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:#8B2020">(~$2–4M)</td>
+          <td style="padding:11px 14px;font-size:11px;color:var(--muted);line-height:1.5">Accepts full SGMA ramp-down risk. Buyer pool for nut block compresses materially post-2030. Re-leasing economics deteriorate as water restrictions tighten.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:11px 14px;color:var(--text)">
+            <div style="font-weight:500">Whole-farm sale 2026</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Single buyer, blended price</div>
+          </td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:var(--muted)">~$10–12M</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:var(--muted)">~0.7–0.8x</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:#8B2020">~(1)–2%</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:16px;color:#8B2020">(~$6–8M)</td>
+          <td style="padding:11px 14px;font-size:11px;color:var(--muted);line-height:1.5">Single buyer discounts nut block water impairment across all 1,190 tillable acres. Peach and open ground absorb discount they don't deserve. Lowest proceeds of the three cases.</td>
+        </tr>
+        <tr style="background:#F5F8F0">
+          <td style="padding:11px 14px;color:var(--text)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:500">Disaggregated exits</span>
+              <span style="font-size:9px;background:var(--navy);color:var(--gold-light);padding:2px 7px;border-radius:2px;letter-spacing:.05em;font-weight:500">RECOMMENDED</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Parcel A 2026 · Parcel C 2027 · Parcel B 2028</div>
+          </td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:20px;font-weight:500;color:var(--c-total)" id="aga-total">—</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:20px;font-weight:500;color:var(--c-total)" id="aga-moic">—</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:20px;font-weight:500" id="aga-irr">—</td>
+          <td style="padding:11px 14px;text-align:right;font-family:'EB Garamond',serif;font-size:20px;font-weight:500" id="aga-gl">—</td>
+          <td style="padding:11px 14px;font-size:11px;color:var(--muted);line-height:1.5">Dedicated buyer pools for each parcel. Parcel C solar/easement conversion eliminates SGMA exposure and multiplies income. Parcel B captures escalating rent before exit. <strong style="font-weight:500;color:var(--text)">Live values from model defaults — updates with Section 03 sliders.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:9px 14px;background:#F5F0E8;border-top:1px solid var(--border);font-size:10px;color:var(--muted)">
+    Disaggregated proceeds show forward exit proceeds only ($17.9M at defaults), matching the parcel summary table. Historical NOI ($3.02M collected 2022–2025) is included in IRR and MOIC calculations but not in the proceeds figure. Hold and whole-farm cases are range estimates. All cases reflect below-hurdle returns due to peak-cycle 2022 entry price.
+  </div>
+</div>
+
+<!-- PARCEL SUMMARY CARDS -->
+<div class="parcels-row">
+
+  <div class="parcel-card nuts">
+    <div class="parcel-head">
+      <span class="parcel-tag">Parcel A · 473 acres · Almonds + Pistachios + Figs</span>
+      <div class="parcel-name">Nut Block</div>
+      <span class="parcel-action">Sell Now</span>
+    </div>
+    <div class="parcel-body">
+      <div class="p-row"><span class="p-label">Acres</span><span class="p-val">473 ac</span></div>
+      <div class="p-row"><span class="p-label">Lease expiry</span><span class="p-val">Sep 2032</span></div>
+      <div class="p-row"><span class="p-label">Est. rent / yr</span><span class="p-val">$830,825</span></div>
+      <div class="p-row"><span class="p-label">Water sensitivity</span><span class="p-val" style="color:var(--c-nuts)">Critical</span></div>
+      <div class="p-row"><span class="p-label">SGMA risk</span><span class="p-val" style="color:var(--c-nuts)">Existential</span></div>
+      <div class="p-row"><span class="p-label">IFC basis / ac</span><span class="p-val">$14,252 ✓</span></div>
+      <div class="p-divider"></div>
+      <div class="p-total-label">Est. sale value</div>
+      <div class="p-total-val" id="nuts-total-display">$4.7M – $6.2M</div>
+    </div>
+  </div>
+
+  <div class="parcel-card peach">
+    <div class="parcel-head">
+      <span class="parcel-tag">Parcel B · 251 acres · Peaches</span>
+      <div class="parcel-name">Peach Block</div>
+      <span class="parcel-action">Hold → Sell 2028–29</span>
+    </div>
+    <div class="parcel-body">
+      <div class="p-row"><span class="p-label">Acres</span><span class="p-val">251 ac</span></div>
+      <div class="p-row"><span class="p-label">Lease expiry</span><span class="p-val">Dec 2029</span></div>
+      <div class="p-row"><span class="p-label">Rent / ac (2026)</span><span class="p-val">$700 NN</span></div>
+      <div class="p-row"><span class="p-label">Annual escalation</span><span class="p-val" style="color:var(--c-peach)">+2% / yr</span></div>
+      <div class="p-row"><span class="p-label">Water need</span><span class="p-val">3.2 AF/ac ✓</span></div>
+      <div class="p-row"><span class="p-label">Water sensitivity</span><span class="p-val" style="color:#7A5010">Moderate</span></div>
+      <div class="p-divider"></div>
+      <div class="p-total-label">Est. sale value (2028–29)</div>
+      <div class="p-total-val" id="peach-total-display">$2.8M – $3.8M</div>
+    </div>
+  </div>
+
+  <div class="parcel-card open">
+    <div class="parcel-head">
+      <span class="parcel-tag">Parcel C · ~390 acres · Open / Barley</span>
+      <div class="parcel-name">Open Block</div>
+      <span class="parcel-action">Convert &amp; Monetize</span>
+    </div>
+    <div class="parcel-body">
+      <div class="p-row"><span class="p-label">Acres (est.)</span><span class="p-val">~390 ac</span></div>
+      <div class="p-row"><span class="p-label">Current rent / ac</span><span class="p-val">$150 NNN</span></div>
+      <div class="p-row"><span class="p-label">Current total</span><span class="p-val">$49,709 / yr</span></div>
+      <div class="p-row"><span class="p-label">Solar potential</span><span class="p-val" style="color:var(--c-open)">$800–1,500/ac</span></div>
+      <div class="p-row"><span class="p-label">Current crop</span><span class="p-val">Silage (dairy) ✓</span></div>
+      <div class="p-row"><span class="p-label">Water sensitivity</span><span class="p-val" style="color:var(--c-peach)">None (solar)</span></div>
+      <div class="p-divider"></div>
+      <div class="p-total-label">Est. conversion value</div>
+      <div class="p-total-val" id="open-total-display">$1.6M – $4.5M</div>
+    </div>
+  </div>
+
+  <div class="parcel-card total">
+    <div class="parcel-head">
+      <span class="parcel-tag">Portfolio total · 1,190 tillable acres</span>
+      <div class="parcel-name">Disaggregated Value</div>
+      <span class="parcel-action">vs. Whole-Farm Blended</span>
+    </div>
+    <div class="parcel-body">
+      <div class="p-row"><span class="p-label">Parcel A (nuts, sell now)</span><span class="p-val" id="sum-a">$5.4M</span></div>
+      <div class="p-row"><span class="p-label">Parcel B (peach, hold)</span><span class="p-val" id="sum-b">$3.3M</span></div>
+      <div class="p-row"><span class="p-label">Parcel C (open, convert)</span><span class="p-val" id="sum-c">$3.0M</span></div>
+      <div class="p-row" style="border-top:.5px solid var(--border);margin-top:4px;padding-top:4px"><span class="p-label">Peach cumulative rent</span><span class="p-val" id="sum-rent">$0.8M</span></div>
+      <div class="p-divider"></div>
+      <div class="p-total-label">Total disaggregated proceeds</div>
+      <div class="p-total-val" id="sum-total" style="color:var(--c-total)">$12.5M</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MAP -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <span class="section-title">Property Map — Parcel Strategy Overlay</span>
+  </div>
+  <div id="property-map"></div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#96C560;"></div>Pistachios 304 ac · Parcel A · Sell Now</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#F4A07A;"></div>Peaches 251 ac · Parcel B · Hold → Sell 2028–29</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8AB4D4;"></div>Barley / Open Ground ~320 ac · Parcel C · Convert</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7A5C8A;"></div>Figs ~70 ac · Parcel C · Convert (open ground per IFC)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#C8936A;"></div>Almonds 169 ac · Parcel A · Sell Now</div>
+    <div style="margin-left:auto;font-size:10px;color:var(--muted);font-style:italic">Click parcels for strategy detail. Boundaries approximate.</div>
+  </div>
+</section>
+
+<!-- DISCUSSION -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <span class="section-title">Strategic Rationale — Why Disaggregation Creates Value</span>
+  </div>
+  <div class="narrative">
+    <p>A whole-farm sale prices the nut acreage discount into every acre across the entire 1,190 tillable acres. A sophisticated buyer acquiring 1,300 acres of mixed California permanent crop in MAGSA — groundwater only, SGMA ramp-down underway — will apply a blended discount to the entire property that reflects the worst-water-risk acreage. The peach block and the open ground effectively subsidize the buyer's risk on the nut acreage. Disaggregating the property into three separately marketed parcels exposes each acre to its own natural buyer pool, each of whom values that specific use case without applying a discount driven by someone else's crop.</p>
+
+    <div class="callout nuts">
+      <strong>Parcel A — Nut Block (Almonds + Pistachios + Figs · 473 acres) · Sell Now</strong><br>
+      The nut block is the most water-sensitive and time-sensitive piece. Almonds require 3.5–4.0 AF/acre. Pistachios require 3.0–3.5 AF/acre. The current GSP sustainable yield of 1.16 AF/acre already cannot support commercial nut production without deficit irrigation. The draft Allocation Framework's 0.72 AF/acre preliminary figure makes it untenable. The Nut &amp; Fig Tenant's lease runs through September 2032 — that in-place income is the asset. Sell while a tenant is paying rent and a buyer can underwrite to that income. Every year of delay brings the 2030 cumulative 30% reduction closer and compresses the buyer pool. The right acquirer is a nut crop operator who believes they can manage the water constraints or plans to renegotiate the lease terms — IFC does not need to solve the water problem, only to sell before the market prices it as fully impaired.
+    </div>
+
+    <div class="callout peach">
+      <strong>Parcel B — Peach Block (251 acres) · Hold Through 2029, Sell 2028–29</strong><br>
+      Peaches require 2.5–3.5 AF/acre — meaningfully less than nuts. The gap between crop water requirements and available allocation is smaller, and stone fruit operators have more flexibility to manage deficit irrigation in a mature orchard than nut growers do. More importantly, the lease structure is compelling: fixed at $700/net acre with 2% annual compounding escalation, expiring December 2029. That escalation compounds to approximately $789/acre in year six — on 251 acres, nearly $200,000 per year in contractually escalating income. Hold through the lease, collect the compounding rent, and execute a disciplined sale in 2028 as the lease approaches expiry with a producing orchard still in the ground. A 2028 sale into a stone fruit buyer who can re-lease or owner-operate is a better outcome than including this acreage in a blended whole-farm sale that discounts it for nut-related water risk it does not carry.
+    </div>
+
+    <div class="callout open">
+      <strong>Parcel C — Open Block (~390 acres) · Convert to Alternative Use</strong><br>
+      The open ground generating $150/acre in barley rent is the most underutilized value in the portfolio and the clearest illustration of Ralph's "sum of parts" thesis. Solar ground leases in Fresno County run $800–1,500/acre annually on 25–35 year terms with creditworthy utility or developer counterparties. That is 5–10x the current rent, and solar is completely indifferent to SGMA — photovoltaic panels do not require groundwater. A solar conversion simultaneously eliminates water risk as a pricing factor and multiplies income. Conservation easement payments from land trusts or USDA ACEP programs are a second path, converting agricultural land value into a one-time payment that can exceed the depressed market value of the parcels outright. Battery energy storage system (BESS) leasing is an emerging third alternative with comparable economics. IFC has already executed this playbook — the Great Canal conservation easement in California was nominated for Agri Investor Deal of Year. Lincoln Ave's open ground is the same move applied to a different context.
+    </div>
+  </div>
+
+
+  <!-- EXECUTION TIMELINE -->
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:18px 20px;margin-top:16px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:14px">Execution timeline</div>
+    <div class="timeline">
+      <div class="tl-item sell">
+        <div class="tl-year">2026 — Now</div>
+        <div class="tl-body"><strong>Parcel A:</strong> Engage agricultural broker for nut block. Market to nut crop operators, agricultural REITs, and institutional farmland buyers who can underwrite to the Nut &amp; Fig Tenant's in-place income through 2032. Simultaneously initiate Parcel C solar / conservation easement feasibility — grid proximity assessment, land trust conversations, USDA ACEP pre-screening.</div>
+      </div>
+      <div class="tl-item convert">
+        <div class="tl-year">2026–2027 — Parcel C</div>
+        <div class="tl-body"><strong>Parcel C:</strong> Execute solar ground lease or conservation easement transaction on open acreage. Target close before 2028 to avoid competing with Parcel B marketing activity. Converts lowest-returning acreage to highest-returning alternative use and eliminates SGMA exposure on those acres entirely.</div>
+      </div>
+      <div class="tl-item hold">
+        <div class="tl-year">2027–2028 — Parcel B prep</div>
+        <div class="tl-body"><strong>Parcel B:</strong> Continue collecting 2%-escalating peach rent. In late 2027, commission agronomic assessment of peach orchard condition, water allocation sufficiency under MAGSA's current ramp schedule, and broker opinion of value. Begin marketing 12–18 months before December 2029 lease expiry to a stone fruit operator or farmland investor comfortable with the water profile.</div>
+      </div>
+      <div class="tl-item hold">
+        <div class="tl-year">2028–2029 — Parcel B close</div>
+        <div class="tl-body"><strong>Parcel B:</strong> Execute sale with a producing orchard in the ground and the lease in its final year. Buyer can negotiate a new lease or plan for owner-operation. IFC collects final escalated rent through close. Total peach income collected 2026–2029 adds to overall portfolio return before final monetization.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNSIDE SCENARIOS -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">02b</span>
+    <span class="section-title">Downside Cases — What Has to Go Wrong</span>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:16px;font-style:italic">The disaggregation strategy is not without execution risk. Each scenario below is specific, quantified where possible, and answered honestly. IC should evaluate whether these risks are acceptable before approving the recommended path.</div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+
+    <!-- SCENARIO 1: Solar fails -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:3px 1fr;min-height:0">
+        <div style="background:var(--c-open-border)"></div>
+        <div style="padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--c-open);text-transform:uppercase;letter-spacing:.06em">Parcel C — Solar / conversion fails</div>
+            <span style="font-size:10px;background:var(--c-open-bg);color:var(--c-open);border:1px solid var(--c-open-border);padding:2px 8px;border-radius:2px">Medium-high probability if not pre-screened</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:12px">
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">The risk</div>
+              <div style="color:var(--text);line-height:1.55">Solar conversion requires viable grid interconnection. CAISO transmission queues in the San Joaquin Valley are among the most congested in California. If the site is too far from existing substation capacity, no solar developer will lease it. Conservation easement is the fallback but generates lower proceeds. If both fail, the open ground reverts to status quo: $150/ac barley rent indefinitely.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Quantified impact</div>
+              <div style="color:var(--text);line-height:1.55">Solar net proceeds (base case): ~$7M. Conservation easement fallback: ~$3–4M. Status quo value (capitalized barley rent): ~$0.9M. <strong style="font-weight:500">Swing of $3–6M on portfolio total proceeds.</strong> Portfolio IRR drops from ~3–4% to ~1–2% if solar fails and conservation easement also unavailable. This is the single largest risk to the disaggregation strategy.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Mitigation</div>
+              <div style="color:var(--text);line-height:1.55">Commission a CAISO interconnection pre-screen and GIS proximity analysis before marketing Parcel C as a solar candidate. This is a 30-day, sub-$25K exercise that either validates the solar path or eliminates it early. Simultaneously initiate land trust conversations — conservation easement does not require interconnection and can proceed in parallel. Do not assume solar is viable; confirm it.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 2: SGMA accelerates -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:3px 1fr;min-height:0">
+        <div style="background:var(--c-nuts-border)"></div>
+        <div style="padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.06em">Parcel A — SGMA restrictions accelerate / nut buyers disappear</div>
+            <span style="font-size:10px;background:var(--c-nuts-bg);color:var(--c-nuts);border:1px solid var(--c-nuts-border);padding:2px 8px;border-radius:2px">Moderate probability — market deteriorating</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:12px">
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">The risk</div>
+              <div style="color:var(--text);line-height:1.55">The Kings Subbasin submitted updated GSPs to DWR in January 2025 addressing 12 corrective actions. If DWR determines implementation is off-track in its periodic review, the subbasin risks probation and state intervention — which would accelerate restrictions and likely trigger immediate buyer repricing. Separately, if almond and pistachio commodity prices remain depressed, the flex rent true-up on the Nut &amp; Fig Tenant lease falls further, compressing the cap-rate-implied value and narrowing the buyer pool to land-value-only bidders.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Quantified impact</div>
+              <div style="color:var(--text);line-height:1.55">If exit cap rate blows out to 10% (vs. 7% base) and flex rent falls to 70% of estimate, Parcel A blended value falls from ~$7.7M to ~$4.5M. <strong style="font-weight:500">~$3.2M reduction in proceeds.</strong> If MAGSA is placed on probation and state intervention triggers immediate allocation curtailment, white-land nut orchard values in comparable subbasins have declined 30–40% in 12 months. At 35% additional compression, Parcel A proceeds could fall to ~$3M.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Mitigation</div>
+              <div style="color:var(--text);line-height:1.55">Urgency of the Parcel A sale is the mitigation. Every quarter of delay brings DWR's next periodic review closer and adds SGMA implementation risk to the buyer's underwriting. The sell-now recommendation exists precisely because the window where a nut lease buyer will pay for in-place income is finite. The correct response to this risk is to move faster on Parcel A, not to reconsider the strategy. Commission a BOV immediately. Do not wait for the CEO meeting to initiate the marketing process.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 3: Peach lease not renewed / maintenance spike -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:3px 1fr;min-height:0">
+        <div style="background:var(--c-peach-border)"></div>
+        <div style="padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--c-peach);text-transform:uppercase;letter-spacing:.06em">Parcel B — Peach tenant water-stressed / 2028 sale window misses</div>
+            <span style="font-size:10px;background:var(--c-peach-bg);color:var(--c-peach);border:1px solid var(--c-peach-border);padding:2px 8px;border-radius:2px">Lower probability but not negligible</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:12px">
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">The risk</div>
+              <div style="color:var(--text);line-height:1.55">Stone fruit requires 3.2 AF/ac. Current GSP sustainable yield is 1.16 AF/ac. The tenant is deficit-irrigating today. If the MAGSA 10% cumulative reduction (already underway in 2025) materially degrades peach yields, the tenant may seek rent abatement, decline to renew, or walk the lease. IFC holds a NN lease, meaning any unexpected maintenance event — irrigation failure, frost damage, pump replacement — hits IFC's P&L directly. The 2024 NOI crater ($449K vs. $888K in 2023) is proof this exposure is real.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Quantified impact</div>
+              <div style="color:var(--text);line-height:1.55">If a $200K maintenance event hits in 2027 (comparable to 2024), Parcel B cumulative rent 2026–2028 falls from ~$550K to ~$350K. If the tenant vacates and IFC sells to a land buyer (not an operator) in 2029, exit land value falls from $12K/ac (producing orchard, sitting tenant) to $8–9K/ac (vacant ground). <strong style="font-weight:500">Combined downside: ~$1.5M reduction in Parcel B proceeds.</strong></div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px;font-weight:500">Mitigation</div>
+              <div style="color:var(--text);line-height:1.55">Commission an agronomic assessment of the peach block in Q3 2026 — orchard health, rootstock age, irrigation system condition, and water usage history. If the orchard is aging or the tenant shows signs of stress, accelerate the Parcel B marketing timeline to 2027 rather than 2028. Accept a slightly lower exit multiple in exchange for executing before a potential vacancy event. Holding a NN lease through a deteriorating water environment is the risk; the mitigation is moving the exit earlier.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- INTERACTIVE MODEL -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <span class="section-title">Interactive Parcel-by-Parcel Model</span>
+  </div>
+
+  <div style="margin-bottom:0">
+    <div class="model-tabs">
+      <button class="model-tab active-nuts" onclick="showPanel('nuts',this)">Parcel A — Nut Block</button>
+      <button class="model-tab" onclick="showPanel('peach',this)">Parcel B — Peach Block</button>
+      <button class="model-tab" onclick="showPanel('open',this)">Parcel C — Open Block</button>
+      <button class="model-tab" onclick="showPanel('total',this)">Portfolio Total</button>
+      <button class="model-tab" onclick="showPanel('compare',this)" style="background:#0D1F2D;color:#C8A96E;border-color:#24465E">vs. Whole-Farm Sale</button>
+    </div>
+
+    <!-- PARCEL A: NUTS -->
+    <div id="panel-nuts" class="model-panel visible">
+      <div class="model-grid">
+        <div class="controls">
+          <div style="font-size:11px;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.07em;font-weight:500;margin-bottom:4px">Sell now · Nut Block</div>
+          <div class="ctrl-group">
+            <div class="ctrl-label">Land value / ac <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="n-lv-lbl">$10,500</span></div>
+            <input type="range" id="n-lv" min="4000" max="20000" step="500" value="10500" oninput="calcNuts()">
+            <div class="range-ends"><span>$4K</span><span>$20K</span></div>
+          </div>
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">Nut Block Acres</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">473 ac <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">Almonds 169 + Pistachios 304 (figs → open ground per IFC)</span>
+          </div>
+          <input type="hidden" id="n-ac" value="473">
+          <div class="ctrl-group">
+            <div class="ctrl-label">Flex rent adjustment <span class="assume-tag assume-pending">Pending</span> <span class="ctrl-value" id="n-fr-lbl">100%</span></div>
+            <input type="range" id="n-fr" min="50" max="120" step="5" value="100" oninput="calcNuts()">
+            <div class="range-ends"><span>50% stressed</span><span>120% upside</span></div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-label">Exit cap rate <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="n-cr-lbl">7.0%</span></div>
+            <input type="range" id="n-cr" min="4" max="12" step="0.25" value="7" oninput="calcNuts()">
+            <div class="range-ends"><span>4%</span><span>12%</span></div>
+          </div>
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">IFC Entry Price / Acre</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">$14,252 <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">LP Statement: $18,527,134 ÷ 1,300 gross acres</span>
+          </div>
+          <input type="hidden" id="n-ep" value="14252">
+          <div style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">Acquisition Year</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">2022 <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div>
+            <span style="font-size:10px;color:var(--muted);font-style:italic">Acquired 6/30/2022 · IFC Core Fund</span>
+          </div>
+          <input type="hidden" id="n-ay" value="2022">
+        </div><!-- end controls -->
+        <div class="outputs" style="border:1px solid var(--border);border-radius:4px;overflow:hidden">
+          <div class="out-section-label">Income (annualised)</div>
+          <div class="out-row"><span class="out-label">Nut &amp; fig flex rent (adjusted)</span><span class="out-val" id="n-rent">$830,825</span></div>
+          <div class="out-row"><span class="out-label">Rent / planted acre</span><span class="out-val" id="n-rpa">$1,756</span></div>
+          <div class="out-section-label">Sale value (sell now)</div>
+          <div class="out-row"><span class="out-label">Land value basis (acres × $/ac)</span><span class="out-val" id="n-lv-total">$4.97M</span></div>
+          <div class="out-row"><span class="out-label">Cap rate basis (rent ÷ cap rate)</span><span class="out-val" id="n-cap-total">$11.87M</span></div>
+          <div class="out-row"><span class="out-label">Blended est. sale value</span><span class="out-val purple" id="n-blend">$8.42M</span></div>
+          <div class="out-section-label">Return on cost</div>
+          <div class="out-row"><span class="out-label">IFC cost basis — nut allocation (473/1300 × $18.53M)</span><span class="out-val" id="n-cost">$8.51M</span></div>
+          <div class="out-row"><span class="out-label">Est. gain / (loss)</span><span class="out-val" id="n-gl">−$0.09M</span></div>
+          <div class="out-row"><span class="out-label">Estimated IRR</span><span class="out-val" id="n-irr">3.1%</span></div>
+          <div id="n-verdict" class="verdict-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARCEL B: PEACH -->
+    <div id="panel-peach" class="model-panel">
+      <div class="model-grid">
+        <div class="controls">
+          <div style="font-size:11px;color:var(--c-peach);text-transform:uppercase;letter-spacing:.07em;font-weight:500;margin-bottom:4px">Hold → Sell 2028–29 · Peach Block</div>
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">Base Rent / Net Acre (2026)</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">$700 <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">NN lease · expiry Dec 2029 · +$14,094/yr capex rent</span>
+          </div>
+          <input type="hidden" id="p-br" value="700">
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">Annual Escalation</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">+2.0% / yr <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">Lease term escalator · compounds to ~$789/ac by 2029</span>
+          </div>
+          <input type="hidden" id="p-esc" value="2">
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">Peach Block Acres</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">251 ac <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">Stone fruit · water demand 3.2 AF/ac (confirmed by IFC)</span>
+          </div>
+          <input type="hidden" id="p-ac" value="251">
+          <div class="ctrl-group">
+            <div class="ctrl-label">Sale year <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="p-sy-lbl">2028</span></div>
+            <input type="range" id="p-sy" min="2027" max="2030" step="1" value="2028" oninput="calcPeach()">
+            <div class="range-ends"><span>2027</span><span>2030</span></div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-label">Land value / ac at sale <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="p-lv-lbl">$12,000</span></div>
+            <input type="range" id="p-lv" min="5000" max="22000" step="500" value="12000" oninput="calcPeach()">
+            <div class="range-ends"><span>$5K</span><span>$22K</span></div>
+          </div>
+<div class="ctrl-group" style="padding:8px 10px;background:#EBF4EE;border:1px solid #6BB88A;border-radius:3px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:#1A4A2A;text-transform:uppercase;letter-spacing:.05em">IFC Entry Price / Acre</span>
+              <span style="font-size:14px;font-weight:600;color:#1A4A2A;font-family:'EB Garamond',serif">$14,252 <span style="font-size:9px;background:#2A5C3F;color:#fff;padding:1px 5px;border-radius:2px;font-family:'DM Sans',sans-serif;font-weight:400">CONFIRMED</span></span>
+            </div><span style="font-size:10px;color:var(--muted);font-style:italic;margin-left:6px">LP Statement: total cost basis $18,527,134</span>
+          </div>
+          <input type="hidden" id="p-ep" value="14252">
+        </div>
+        <div class="outputs" style="border:1px solid var(--border);border-radius:4px;overflow:hidden">
+          <div class="out-section-label">Lease income (2026 → sale year)</div>
+          <div class="out-row"><span class="out-label">2026 annual rent</span><span class="out-val" id="p-r26">$175,700</span></div>
+          <div class="out-row"><span class="out-label">Cumulative rent collected</span><span class="out-val" id="p-cum">$368K</span></div>
+          <div class="out-row"><span class="out-label">Rent / ac at sale year</span><span class="out-val pos" id="p-rsy">$757</span></div>
+          <div class="out-section-label">Sale at exit year</div>
+          <div class="out-row"><span class="out-label">Projected land sale value</span><span class="out-val" id="p-sv">$3.01M</span></div>
+          <div class="out-row"><span class="out-label">Total proceeds (rent + sale)</span><span class="out-val purple" id="p-total">$3.38M</span></div>
+          <div class="out-section-label">Return on cost</div>
+          <div class="out-row"><span class="out-label">IFC cost basis — peach allocation (251/1300 × $18.53M)</span><span class="out-val" id="p-cost">$4.52M</span></div>
+          <div class="out-row"><span class="out-label">Est. gain / (loss)</span><span class="out-val" id="p-gl">−$1.14M</span></div>
+          <div class="out-row"><span class="out-label">Estimated IRR</span><span class="out-val" id="p-irr">2.1%</span></div>
+          <div id="p-verdict" class="verdict-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARCEL C: OPEN -->
+    <div id="panel-open" class="model-panel">
+      <div class="model-grid">
+        <div class="controls">
+          <div style="font-size:11px;color:var(--c-open);text-transform:uppercase;letter-spacing:.07em;font-weight:500;margin-bottom:4px">Convert &amp; Monetize · Open Block</div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">Acres (est.) <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="o-ac-lbl">390</span></div>
+            <input type="range" id="o-ac" min="300" max="500" step="10" value="390" oninput="calcOpen()">
+            <div class="range-ends"><span>300</span><span>500</span></div>
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">Conversion strategy</div>
+            <select id="o-strat" onchange="calcOpen()">
+              <option value="solar">Solar ground lease (25–35 yr)</option>
+              <option value="conservation">Conservation easement</option>
+              <option value="bess">Battery energy storage (BESS)</option>
+              <option value="status">Status quo (barley, $150/ac)</option>
+            </select>
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">Annual income / ac <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="o-inc-lbl">$1,100</span></div>
+            <input type="range" id="o-inc" min="150" max="2000" step="50" value="1100" oninput="calcOpen()">
+            <div class="range-ends"><span>$150</span><span>$2,000</span></div>
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">Capitalization rate <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="o-cap-lbl">5.5%</span></div>
+            <input type="range" id="o-cap" min="4" max="10" step="0.25" value="5.5" oninput="calcOpen()">
+            <div class="range-ends"><span>4%</span><span>10%</span></div>
+          </div>
+
+          <!-- IFC COST BREAKDOWN — dynamic by strategy -->
+          <div id="o-cost-breakdown" style="background:#F5F0E8;border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-top:4px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;font-weight:500">IFC transaction costs <span style="font-weight:400;font-style:italic">(IFC pays — not developer)</span></div>
+            <div id="o-cost-lines"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+              <span style="font-size:11px;font-weight:500;color:var(--text)">Total IFC cost</span>
+              <span style="font-size:13px;font-weight:600;color:var(--c-nuts);font-family:'EB Garamond',serif" id="o-cost-total">$750K</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="outputs" style="border:1px solid var(--border);border-radius:4px;overflow:hidden">
+          <div class="out-section-label">Current vs. converted income</div>
+          <div class="out-row"><span class="out-label">Current annual income (barley NNN)</span><span class="out-val">$49,709</span></div>
+          <div class="out-row"><span class="out-label">Converted annual income</span><span class="out-val pos" id="o-new-inc">$429,000</span></div>
+          <div class="out-row"><span class="out-label">Annual income uplift</span><span class="out-val pos" id="o-uplift">+$379K</span></div>
+          <div class="out-section-label">Gross monetization value</div>
+          <div class="out-row"><span class="out-label">Gross value (income ÷ cap rate)</span><span class="out-val" id="o-gross">$7.80M</span></div>
+          <div class="out-section-label">IFC cost deductions</div>
+          <div class="out-row" id="o-row-entitle" style="display:none"><span class="out-label" id="o-lbl-entitle">Entitlement / legal / permitting</span><span class="out-val neg" id="o-val-entitle">—</span></div>
+          <div class="out-row" id="o-row-williamson" style="display:none"><span class="out-label">Williamson Act cancellation fee</span><span class="out-val neg" id="o-val-williamson">—</span></div>
+          <div class="out-row" id="o-row-broker"><span class="out-label" id="o-lbl-broker">Broker / advisor fee</span><span class="out-val neg" id="o-val-broker">—</span></div>
+          <div class="out-row" id="o-row-stewardship" style="display:none"><span class="out-label">Stewardship endowment (land trust)</span><span class="out-val neg" id="o-val-stewardship">—</span></div>
+          <div class="out-row" id="o-row-feasibility" style="display:none"><span class="out-label">Feasibility / grid study</span><span class="out-val neg" id="o-val-feasibility">—</span></div>
+          <div class="out-row" style="background:#F5F0E8"><span class="out-label" style="font-weight:500">Total IFC cost</span><span class="out-val neg" id="o-devcost">−$0.75M</span></div>
+          <div class="out-section-label">Net to IFC</div>
+          <div class="out-row"><span class="out-label" style="font-weight:500">Net proceeds</span><span class="out-val purple" id="o-net" style="font-size:22px">$7.05M</span></div>
+          <div class="out-section-label">vs. Status quo</div>
+          <div class="out-row"><span class="out-label">Status quo value ($150/ac barley)</span><span class="out-val" id="o-sq">$0.90M</span></div>
+          <div class="out-row"><span class="out-label">Value created vs. doing nothing</span><span class="out-val pos" id="o-uplift2">+$6.15M</span></div>
+          <div id="o-verdict" class="verdict-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARISON PANEL -->
+    <div id="panel-compare" class="model-panel">
+      <div style="margin-bottom:20px">
+        <div style="background:#EBF4EE;border:1px solid #6BB88A;border-radius:4px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#1A4A2A;line-height:1.6">
+          <strong style="display:block;margin-bottom:5px">✓ Confirmed data incorporated — IFC response received April 22, 2026</strong>
+          <strong>Cost basis:</strong> $18,527,134 (original purchase $16.5M + $124K acq. costs + $1.9M CapEx) &nbsp;·&nbsp; <strong>Acquired:</strong> 6/30/2022 &nbsp;·&nbsp; <strong>Per gross acre:</strong> $14,252<br>
+          <strong>Water demand:</strong> Almonds 3.75 AF/ac &nbsp;·&nbsp; Pistachios 3.5 AF/ac &nbsp;·&nbsp; Stone fruit 3.2 AF/ac &nbsp;·&nbsp; No supplemental source &nbsp;·&nbsp; MAGSA not on probation<br>
+          <strong>Figs:</strong> Reclassified as open ground per IFC &nbsp;·&nbsp; <strong>Open ground:</strong> Silage for adjacent dairy — IFC: "not throwing good money after bad" on permanent crop development<br>
+          <strong>NOI since inception:</strong> 2022 $645K · 2023 $888K · 2024 $449K (heavy maintenance yr) · 2025 $1.04M &nbsp;·&nbsp; <strong>Total NOI:</strong> $3.02M collected
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Whole-farm blended sale applies a single blended discount across all 1,190 tillable acres. Disaggregated sale finds a dedicated buyer for each parcel at its own market-clearing price. Adjust the whole-farm assumptions below to test the spread.</div>
+
+        <!-- WHOLE FARM CONTROLS -->
+        <div style="background:#F5F0E8;border:1px solid var(--border);border-radius:4px;padding:16px 18px;margin-bottom:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">Whole-farm blended sale assumptions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+            <div class="ctrl-group">
+              <div class="ctrl-label">Blended $/tillable acre <span class="assume-tag assume-assumed">Assumed</span><span class="ctrl-value" id="wf-ppa-lbl">$9,000</span></div>
+              <input type="range" id="wf-ppa" min="4000" max="20000" step="250" value="9000" oninput="calcCompare()">
+              <div class="range-ends"><span>$4K</span><span>$20K</span></div>
+            </div>
+            <div class="ctrl-group">
+              <div class="ctrl-label">Blended exit cap rate <span class="assume-tag assume-assumed">Assumed</span><span class="ctrl-value" id="wf-cr-lbl">7.5%</span></div>
+              <input type="range" id="wf-cr" min="4" max="12" step="0.25" value="7.5" oninput="calcCompare()">
+              <div class="range-ends"><span>4%</span><span>12%</span></div>
+            </div>
+            <div class="ctrl-group">
+              <div class="ctrl-label">SGMA discount applied <span class="assume-tag assume-assumed">Assumed</span><span class="ctrl-value" id="wf-disc-lbl">25%</span></div>
+              <input type="range" id="wf-disc" min="0" max="50" step="5" value="25" oninput="calcCompare()">
+              <div class="range-ends"><span>0%</span><span>50%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDE BY SIDE -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <!-- WHOLE FARM -->
+          <div style="border:1px solid var(--border);border-radius:4px;overflow:hidden">
+            <div style="background:var(--navy-mid);padding:10px 14px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:2px">Option A</div>
+              <div style="font-family:'EB Garamond',serif;font-size:16px;color:var(--white)">Whole-Farm Sale — Single Transaction</div>
+            </div>
+            <div style="background:var(--white)">
+              <div class="out-section-label">Valuation basis</div>
+              <div class="out-row"><span class="out-label">Tillable acres</span><span class="out-val">1,190</span></div>
+              <div class="out-row"><span class="out-label">Blended land value / ac</span><span class="out-val" id="wf-ppa-out">$9,000</span></div>
+              <div class="out-row"><span class="out-label">Gross land value</span><span class="out-val" id="wf-gross">$10.7M</span></div>
+              <div class="out-row"><span class="out-label">SGMA / water discount applied</span><span class="out-val neg" id="wf-disc-out">−$2.7M</span></div>
+              <div class="out-row"><span class="out-label">Cap rate implied value</span><span class="out-val" id="wf-cap-out">$14.5M</span></div>
+              <div class="out-section-label">Net proceeds</div>
+              <div class="out-row"><span class="out-label" style="font-weight:500">Estimated whole-farm proceeds</span><span class="out-val" id="wf-net" style="font-size:22px">$11.8M</span></div>
+              <div class="out-row"><span class="out-label">Est. IRR on assumed cost basis</span><span class="out-val" id="wf-irr">1.9%</span></div>
+            </div>
+          </div>
+
+          <!-- DISAGGREGATED -->
+          <div style="border:2px solid var(--c-total-border);border-radius:4px;overflow:hidden">
+            <div style="background:var(--navy);padding:10px 14px">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-light);margin-bottom:2px">Option B — Recommended</div>
+              <div style="font-family:'EB Garamond',serif;font-size:16px;color:var(--white)">Parcel Disaggregation — Sum of Parts</div>
+            </div>
+            <div style="background:var(--white)">
+              <div class="out-section-label">By parcel</div>
+              <div class="out-row">
+                <span class="out-label"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-nuts);margin-right:5px;vertical-align:middle"></span>Parcel A — Nut Block (sell now)</span>
+                <span class="out-val" id="cmp-a" style="color:var(--c-nuts)">$5.4M</span>
+              </div>
+              <div class="out-row">
+                <span class="out-label"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-peach);margin-right:5px;vertical-align:middle"></span>Parcel B — Peach Block (hold + sell)</span>
+                <span class="out-val" id="cmp-b" style="color:var(--c-peach)">$3.4M</span>
+              </div>
+              <div class="out-row">
+                <span class="out-label"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c-open);margin-right:5px;vertical-align:middle"></span>Parcel C — Open Block (convert)</span>
+                <span class="out-val" id="cmp-c" style="color:var(--c-open)">$7.3M</span>
+              </div>
+              <div class="out-section-label">Net proceeds</div>
+              <div class="out-row"><span class="out-label" style="font-weight:500">Total disaggregated proceeds</span><span class="out-val purple" id="cmp-total" style="font-size:22px">$16.1M</span></div>
+              <div class="out-row"><span class="out-label">Value created vs. whole-farm sale</span><span class="out-val pos" id="cmp-delta">+$4.3M</span></div>
+              <div class="out-row" style="background:#F0EDFE"><span class="out-label" style="font-weight:500">Est. portfolio IRR (disaggregation)</span><span class="out-val purple" id="cmp-irr-disagg" style="font-size:22px">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WATERFALL CHART -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:18px 20px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:16px">Value creation waterfall — whole-farm vs. disaggregated</div>
+          <div style="position:relative;height:220px;margin-bottom:8px">
+            <canvas id="waterfall-chart" role="img" aria-label="Waterfall chart showing value creation from whole-farm to disaggregated sale"></canvas>
+          </div>
+          <div id="waterfall-legend" style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted)"></div>
+        </div>
+
+        <!-- NARRATIVE COMPARISON -->
+        <div style="margin-top:16px;padding:16px 18px;background:var(--white);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">Why the spread exists</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:12px">
+            <div>
+              <div style="font-weight:500;color:var(--c-nuts);margin-bottom:4px">Nut Block premium</div>
+              <div style="color:var(--muted);line-height:1.55">A dedicated nut crop buyer underwrites to the Nut &amp; Fig Tenant's in-place income through 2032. A whole-farm buyer prices the nut block as a distressed water asset without lease credit. The dedicated buyer pays for the lease; the blended buyer prices for the land.</div>
+            </div>
+            <div>
+              <div style="font-weight:500;color:var(--c-peach);margin-bottom:4px">Peach Block rent income</div>
+              <div style="color:var(--muted);line-height:1.55">The disaggregated approach collects 2–3 years of escalating peach rent before sale. A whole-farm sale today foregoes that cumulative income. The hold period converts time into yield — something a single-transaction exit cannot capture.</div>
+            </div>
+            <div>
+              <div style="font-weight:500;color:var(--c-open);margin-bottom:4px">Open Block conversion</div>
+              <div style="color:var(--muted);line-height:1.55">The largest single driver. A whole-farm buyer values open ground at the blended agricultural rate — $5K–$9K/ac. Solar or conservation conversion monetizes it at $10K–$20K/ac equivalent. The conversion itself creates value before any sale occurs.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PORTFOLIO TOTAL -->
+    <div id="panel-total" class="model-panel">
+      <div style="margin-bottom:20px">
+
+        <!-- PARCEL C HOLD ASSUMPTIONS (new — drives portfolio IRR) -->
+        <div style="background:#EEF4FB;border:1px solid var(--c-open-border);border-radius:4px;padding:14px 18px;margin-bottom:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--c-open);font-weight:500;margin-bottom:12px">Parcel C — Conversion timing &amp; hold assumptions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+
+            <div class="ctrl-group">
+              <div class="ctrl-label">Yrs to conversion close <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="irr-cyr-lbl">1.5 yrs</span></div>
+              <input type="range" id="irr-cyr" min="0.5" max="4" step="0.5" value="1.5" oninput="calcPortfolioIRR()">
+              <div class="range-ends"><span>0.5 yr</span><span>4 yrs</span></div>
+              <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:3px">Time from today until conversion deal closes. Solar CUP + entitlement typically 12–24 months. Conservation easement 6–18 months.</div>
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-label">Land appreciation (hold) <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="irr-app-lbl">0.0%</span></div>
+              <input type="range" id="irr-app" min="-5" max="4" step="0.5" value="0" oninput="calcPortfolioIRR()">
+              <div class="range-ends"><span>−5%/yr</span><span>+4%/yr</span></div>
+              <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:3px">Annual change in underlying land value while conversion is pending. Solar increases land attractiveness; conservation is neutral to positive. SGMA is a headwind.</div>
+            </div>
+
+            <div class="ctrl-group">
+              <div class="ctrl-label">Gross conversion proceeds / ac <span class="assume-tag assume-assumed">Assumed</span> <span class="ctrl-value" id="irr-ppa-lbl">$20,000</span></div>
+              <input type="range" id="irr-ppa" min="4000" max="28000" step="500" value="20000" oninput="calcPortfolioIRR()">
+              <div class="range-ends"><span>$4K</span><span>$28K</span></div>
+              <div style="font-size:10px;color:var(--muted);font-style:italic;margin-top:3px">Default $20K/ac = $1,100/ac solar income ÷ 5.5% cap rate — the full capitalized value per acre, consistent with the Parcel C tab. Conservation easement: slide to $8K–$10K/ac. Gross before IFC costs.</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- PORTFOLIO IRR DISPLAY -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+          <!-- CONSOLIDATED CASH FLOW TIMELINE -->
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+            <div style="background:var(--navy-mid);padding:10px 14px">
+              <div style="font-family:'EB Garamond',serif;font-size:15px;color:var(--white)">Consolidated Cash Flow Timeline</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px">All parcels · $18.53M cost basis · June 2022 origin</div>
+            </div>
+            <div id="cf-timeline" style="padding:4px 0;font-size:12px"></div>
+          </div>
+
+          <!-- IRR RESULTS -->
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+            <div style="background:var(--navy);padding:10px 14px">
+              <div style="font-family:'EB Garamond',serif;font-size:15px;color:var(--white)">Portfolio Return — Disaggregation Strategy</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:2px">IFC Core Fund · Lincoln Ave Farm · Full hold period</div>
+            </div>
+            <div class="out-section-label">Total proceeds</div>
+            <div class="out-row"><span class="out-label">Parcel A — Nut Block sale</span><span class="out-val" id="irr-a-proc" style="color:var(--c-nuts)">—</span></div>
+            <div class="out-row"><span class="out-label">Parcel B — Peach rent + sale</span><span class="out-val" id="irr-b-proc" style="color:var(--c-peach)">—</span></div>
+            <div class="out-row"><span class="out-label">Parcel C — Conversion (net)</span><span class="out-val" id="irr-c-proc" style="color:var(--c-open)">—</span></div>
+            <div class="out-row"><span class="out-label">Historical NOI collected (2022–25)</span><span class="out-val" id="irr-hist">+$3.02M</span></div>
+            <div class="out-row" style="background:#F5F0E8"><span class="out-label" style="font-weight:500">Total gross proceeds</span><span class="out-val purple" id="irr-gross-total" style="font-size:20px">—</span></div>
+            <div class="out-section-label">Return on $18.53M cost basis</div>
+            <div class="out-row"><span class="out-label">MOIC (total proceeds ÷ cost basis)</span><span class="out-val" id="irr-moic">—</span></div>
+            <div class="out-row"><span class="out-label">Gain / (loss) on cost</span><span class="out-val" id="irr-gl">—</span></div>
+            <div class="out-row" style="background:#F5F0E8">
+              <span class="out-label" style="font-weight:500">Portfolio IRR (disaggregation)</span>
+              <span class="out-val" id="irr-portfolio" style="font-size:26px;font-weight:600">—</span>
+            </div>
+            <div id="irr-verdict" style="padding:10px 14px;font-size:11px;color:var(--muted);border-top:1px solid #EDE8E0;line-height:1.55"></div>
+          </div>
+
+        </div>
+
+        <!-- SUMMARY TABLE -->
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Parcel-level proceeds flowing into portfolio IRR above. Adjust individual parcel panels or Parcel C hold assumptions above.</div>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Parcel</th><th>Acres</th><th>Strategy</th><th>Exit year</th><th>Est. proceeds</th><th>IRR contribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>A — Nut Block</strong><br><span style="font-size:11px;color:var(--muted)">Almonds, Pistachios</span></td>
+              <td>473</td>
+              <td><span class="action-pill pill-sell">Sell now</span></td>
+              <td>H2 2026</td>
+              <td id="t-a-val">—</td>
+              <td><span style="font-size:11px;color:var(--muted)">Earliest exit · best timing</span></td>
+            </tr>
+            <tr>
+              <td><strong>B — Peach Block</strong><br><span style="font-size:11px;color:var(--muted)">Stone fruit, NN lease</span></td>
+              <td>251</td>
+              <td><span class="action-pill pill-hold">Hold → Sell</span></td>
+              <td id="t-b-yr">2028</td>
+              <td id="t-b-val">—</td>
+              <td><span style="font-size:11px;color:var(--muted)">2% rent escalation captured</span></td>
+            </tr>
+            <tr>
+              <td><strong>C — Open Block</strong><br><span style="font-size:11px;color:var(--muted)">Barley / figs</span></td>
+              <td>~390</td>
+              <td><span class="action-pill pill-convert">Convert</span></td>
+              <td id="t-c-yr">2027</td>
+              <td id="t-c-val">—</td>
+              <td><span style="font-size:11px;color:var(--muted)">Largest value creator</span></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="4"><strong>Total disaggregated proceeds (excl. hist. NOI)</strong></td>
+              <td id="t-total" style="color:var(--c-total);font-size:16px">—</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:14px;padding:14px;background:var(--white);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Why disaggregation beats whole-farm sale</div>
+          <div class="narrative">
+            <p>A single buyer for all 1,300 acres prices the nut block's water impairment into every acre — including the peaches and the open ground. Disaggregating exposes each acre to its own buyer pool. The dedicated nut crop buyer prices the in-place lease through 2032. The solar developer prices the open ground on energy economics, not agricultural water availability. The stone fruit operator prices the peach block on lease economics and orchard productivity, not SGMA trajectory.</p>
+            <p>The portfolio IRR above is the honest number. IFC paid $14,252/ac at peak in June 2022. The disaggregation strategy does not fully recover the basis — the nut block has been structurally impaired by SGMA. What it does is maximize recovery within that constraint, with the Parcel C conversion doing the heaviest lifting on total return.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 04 -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <span class="section-title">Due Diligence, Knowledge Gaps &amp; Next Steps</span>
+  </div>
+
+  <!-- NN / NNN GLOSSARY -->
+  <div style="margin-bottom:24px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">Lease structure glossary — NN vs. NNN</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 14px">
+        <div style="font-size:18px;font-family:'EB Garamond',serif;font-weight:500;color:var(--navy);margin-bottom:4px">Gross</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Landlord pays all</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">Tenant pays rent only. Landlord absorbs taxes, insurance, and all maintenance. Maximum exposure for IFC; most favorable to tenant.</div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 14px">
+        <div style="font-size:18px;font-family:'EB Garamond',serif;font-weight:500;color:var(--navy);margin-bottom:4px">Net (N)</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Tenant pays taxes</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">Tenant pays property taxes. IFC still covers insurance and all maintenance and repairs.</div>
+      </div>
+
+      <div style="background:var(--c-peach-bg);border:1px solid var(--c-peach-border);border-radius:4px;padding:12px 14px">
+        <div style="font-size:18px;font-family:'EB Garamond',serif;font-weight:500;color:var(--c-peach);margin-bottom:4px">Double Net (NN)</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--c-peach);margin-bottom:8px">Peach Block lease</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">Tenant pays property taxes AND insurance. <strong>IFC still responsible for maintenance and repairs.</strong> The 2024 NOI crater ($449K vs. $888K in 2023) reflects this — $657K in farmland maintenance/repair hit IFC's P&L because of NN exposure.</div>
+      </div>
+
+      <div style="background:var(--c-nuts-bg);border:1px solid var(--c-nuts-border);border-radius:4px;padding:12px 14px">
+        <div style="font-size:18px;font-family:'EB Garamond',serif;font-weight:500;color:var(--c-nuts);margin-bottom:4px">Triple Net (NNN)</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--c-nuts);margin-bottom:8px">Nut &amp; Fig + Open Ground leases</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">Tenant pays taxes, insurance, AND maintenance. <strong>IFC collects rent and touches nothing.</strong> The NNN structure on the nut block through 2032 is a genuine selling point — buyers can underwrite to a clean, unencumbered cash flow stream.</div>
+      </div>
+
+    </div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:11px 14px;font-size:12px;color:var(--text);line-height:1.6">
+      <strong>Why this matters for the sell decision:</strong> The Parcel A nut block (NNN through 2032) is easier to market than Parcel B (NN through 2029) because a buyer of the nut block has no operating exposure — they are buying a six-year income stream, full stop. A buyer of the peach block is implicitly underwriting IFC's maintenance exposure for the remaining lease term. A sophisticated buyer will discount accordingly, and you should model that discount explicitly when you receive broker opinions of value on each parcel.
+      <br><br>
+      <strong>The capex rent line ($14,094/yr on the Peach Block)</strong> is a separate surcharge IFC is collecting to recoup a specific capital investment made in the orchard — likely drip irrigation infrastructure or a pump upgrade. This is a knowledge gap: whether that infrastructure is owned by IFC and transfers with the parcel, or is owned by the tenant, materially affects both the sale price and the buyer's willingness to renew the lease.
+    </div>
+  </div>
+
+  <!-- Q&A SUMMARY -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">Q&A — Kody Cobb / Ralph Isenrich · April 21–22, 2026</div>
+    <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:12px 16px;background:#F5F0E8;border-right:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Question</div>
+          <div style="font-size:12px;color:var(--text)">Water gap management — at 1.16 AF/acre the property cannot meet nut crop requirements. How are tenants managing, and is there any supplemental source?</div>
+        </div>
+        <div style="padding:12px 16px;background:#EBF4EE">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#2A5C3F;margin-bottom:5px">Ralph's Answer ✓</div>
+          <div style="font-size:12px;color:#1A4A2A">Water demand by crop: pistachios 3.5 AF/ac, almonds 3.75 AF/ac, stone fruit 3.2 AF/ac. No water restrictions have been implemented to date. No supplemental water sources — groundwater only. Use the appendix reduction schedule for ramp-down assumptions. MAGSA is not under probation.</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:12px 16px;background:#F5F0E8;border-right:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Question</div>
+          <div style="font-size:12px;color:var(--text)">Flex rent basis — is the $830K Nut &amp; Fig estimate based on current or normalized commodity prices? Almond prices dropped ~20% on USDA's 3B-lb 2025 crop projection.</div>
+        </div>
+        <div style="padding:12px 16px;background:#EBF4EE">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#2A5C3F;margin-bottom:5px">Ralph's Answer ✓</div>
+          <div style="font-size:12px;color:#1A4A2A">"I wouldn't get hung up on the estimated rent. Our lease has a true-up to whatever the revenue (yield × price) is." Treat figs as open ground for purposes of this analysis.</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:12px 16px;background:#F5F0E8;border-right:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Question</div>
+          <div style="font-size:12px;color:var(--text)">IFC cost basis and acquisition date — needed to frame the return analysis. Was this acquired at peak valuations? What was the per-acre purchase price?</div>
+        </div>
+        <div style="padding:12px 16px;background:#EBF4EE">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#2A5C3F;margin-bottom:5px">Ralph's Answer ✓</div>
+          <div style="font-size:12px;color:#1A4A2A">Provided LP schedule of investments (attached). Confirmed: cost $18,527,134 · acquired 6/30/2022 · per gross acre $14,252 · original purchase $16.5M + $124K acq. costs + $1.9M CapEx since close.</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr">
+        <div style="padding:12px 16px;background:#F5F0E8;border-right:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Question</div>
+          <div style="font-size:12px;color:var(--text)">Open ground composition — what is actually on the ~390 acres? Is the lack of permanent crops a water-driven decision?</div>
+        </div>
+        <div style="padding:12px 16px;background:#EBF4EE">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#2A5C3F;margin-bottom:5px">Ralph's Answer ✓</div>
+          <div style="font-size:12px;color:#1A4A2A">"Open ground being farmed to annual crops (silage for the next door dairy). Your assumption is correct — it would be permanent crops if we had enough water long-term, but we know water restrictions are coming, so we're not throwing good money after bad."</div>
+        </div>
+      </div>
+
+    </div>
+    <div style="font-size:11px;color:var(--muted);padding:8px 12px;background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;font-style:italic">Ralph's unsolicited note: "The below are good questions, fyi."</div>
+  </div>
+
+  <!-- ASSUMPTION RATIONALE -->
+  <div style="margin-bottom:20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">Assumed Input Rationale</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+      <thead>
+        <tr style="background:var(--navy)">
+          <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,.6);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:.07em">Input</th>
+          <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,.6);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:.07em">Default Value</th>
+          <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,.6);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:.07em">Basis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Nut block land value / ac</td>
+          <td style="padding:9px 12px;font-weight:500">$10,500</td>
+          <td style="padding:9px 12px;color:var(--muted)">ASFMRA 2025 Trends: white-land (groundwater-only) nut orchards in Fresno County trading $7,500–$13,000/ac. Midpoint reflects current impaired demand.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Nut block exit cap rate</td>
+          <td style="padding:9px 12px;font-weight:500">7.0%</td>
+          <td style="padding:9px 12px;color:var(--muted)">Expanded cap rate reflects buyer's SGMA risk pricing. Institutional buyers underwriting MAGSA assets in 2025 have demanded 6.5–8.5%. 7% is a reasonable mid-market assumption for a 2026 sale with 2032 lease in place.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Flex rent adjustment</td>
+          <td style="padding:9px 12px;font-weight:500">100% of est.</td>
+          <td style="padding:9px 12px;color:var(--muted)">Ralph indicated the $830,825 estimate is a true-up to actual revenue. Model defaults to 100% with the slider available to stress-test at 70–80% given USDA's 2025 record almond crop projection and ~20% price decline.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Peach block sale year</td>
+          <td style="padding:9px 12px;font-weight:500">2028</td>
+          <td style="padding:9px 12px;color:var(--muted)">Marketing 12–18 months before December 2029 lease expiry allows buyer to negotiate with sitting tenant. 2028 captures maximum compounding rent while maintaining orchard productivity as a selling feature.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Peach block exit land value</td>
+          <td style="padding:9px 12px;font-weight:500">$12,000 / ac</td>
+          <td style="padding:9px 12px;color:var(--muted)">Stone fruit ground with moderate water sensitivity trading $10,000–$18,000/ac in Fresno/Tulare depending on water access. $12K reflects MAGSA groundwater-only discount vs. district-served comparables.</td>
+        </tr>
+        <tr style="border-bottom:1px solid #EDE8E0">
+          <td style="padding:9px 12px;color:var(--text)">Solar income / ac</td>
+          <td style="padding:9px 12px;font-weight:500">$1,100 / ac</td>
+          <td style="padding:9px 12px;color:var(--muted)">Solar ground lease rates in San Joaquin Valley: $800–$1,500/ac annually. $1,100 is midpoint on flat Class I/II soils with grid proximity. Requires interconnection feasibility confirmation before marketing.</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 12px;color:var(--text)">Whole-farm blended $/ac</td>
+          <td style="padding:9px 12px;font-weight:500">$9,000 / ac</td>
+          <td style="padding:9px 12px;color:var(--muted)">A blended buyer discounts the entire property for the worst-water-risk acreage (nuts). $9K/tillable acre is a conservative blended estimate for a single-buyer whole-farm transaction in MAGSA in 2026, consistent with distressed comparable transactions.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- KNOWLEDGE GAPS -->
+  <div style="margin-bottom:24px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">Knowledge gaps — inputs that would materially change this model</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-style:italic">Information hygiene is part of the deliverable. These are the specific unknowns that, if answered, would narrow the confidence interval on the portfolio IRR most significantly. Organized by impact on the model.</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--c-nuts);margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.05em">High impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Williamson Act enrollment</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Is any portion of Lincoln Ave Farm enrolled in a Williamson Act (California Land Conservation Act) contract? If yes, solar conversion requires a cancellation fee equal to 12.5% of land FMV — roughly $390K–$490K on this acreage at current values. This is modeled as a cost in the Parcel C panel but enrollment status is not confirmed. A title search or county assessor inquiry would resolve this in 2–3 days. <strong>Model impact: ±$400K on Parcel C net proceeds, ±0.3–0.5% on portfolio IRR.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--c-nuts);margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.05em">High impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Actual 2025 nut flex rent</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">The $830,825 flex rent estimate is a projection, not an actual. Ralph confirmed it true-ups to actual revenue (yield × price). USDA's 2025 almond crop projection of 3.0B lbs drove a ~20% price decline; the actual 2025 flex rent payment may be materially lower. The model defaults to 100% of the estimate. <strong>Model impact: if actual 2025 flex rent came in at 75% of estimate ($623K), Parcel A cap-rate valuation falls by ~$3M and portfolio IRR compresses by 0.5–0.8%.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--c-nuts);margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.05em">High impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">APN parcel structure</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">The disaggregation strategy assumes the three parcel footprints can be independently marketed and sold. If the tenant footprints do not correspond to separate Assessor Parcel Numbers (APNs), a lot-line adjustment or subdivision is required before separate sales. Fresno County lot-line adjustments typically take 3–6 months. This could delay the Parcel A nut block sale and shift the cash flow timeline. <strong>Model impact: 6-month delay on Parcel A shifts ~$5–7M of proceeds right by 0.5 years, compressing IRR by ~0.3%.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:#7A5010;margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:#7A5010;text-transform:uppercase;letter-spacing:.05em">Medium impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Lease assignment provisions</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Do the Nut &amp; Fig Tenant, Peach Tenant, or Open Ground Tenant leases contain change-of-control or assignment provisions requiring tenant consent on a sale? If yes, any of these tenants could condition their consent on revised economics, reducing net proceeds or delaying closing. <strong>Model impact: conditional on consent requirement — could range from negligible to blocking a parcel sale entirely.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:#7A5010;margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:#7A5010;text-transform:uppercase;letter-spacing:.05em">Medium impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Solar grid proximity</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">The Parcel C solar ground lease assumes $1,100/ac annual income capitalized at 5.5%, generating ~$11K/ac in gross proceeds. This assumes the property has viable grid interconnection proximity. San Joaquin Valley transmission queues are among the most congested in CAISO; if the site is far from existing substation capacity, a solar developer's willingness-to-pay declines materially. A 30-minute GIS screen against CAISO interconnection maps would confirm or invalidate the solar assumption. <strong>Model impact: if solar is not viable, default to conservation easement — Parcel C net proceeds fall by $2–5M.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:#7A5010;margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:#7A5010;text-transform:uppercase;letter-spacing:.05em">Medium impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Peach block capex rent</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">The Peach Tenant pays $14,094/yr in capex rent — a surcharge on top of the base $700/ac rent that recaptures a specific IFC capital investment. The nature of this infrastructure (drip irrigation, pump, cold storage?) and its ownership is unconfirmed. If IFC owns the infrastructure outright, it is an asset that transfers with the parcel and should be valued separately. If the tenant financed it, the capex rent disappears on sale. <strong>Model impact: affects Parcel B sale price framing and buyer due diligence scope.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--c-peach);margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:var(--c-peach);text-transform:uppercase;letter-spacing:.05em">Lower impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Current water usage vs. GSP allocation</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Water demand by crop is confirmed (almonds 3.75, pistachios 3.5, stone fruit 3.2 AF/ac). Current GSP sustainable yield is 1.16 AF/ac with a ramp-down schedule. How tenants are currently managing the gap — deficit irrigation, purchased water transfers, partial fallowing — is not confirmed. If tenants have developed informal water acquisition arrangements, the near-term income picture may be more stable than the SGMA ramp-down implies. Conversely, if yields are already degraded, the flex rent true-up will show it. <strong>Model impact: colors the urgency of Parcel A sale timing; does not change the structural conclusion.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:#7A5010;margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:#7A5010;text-transform:uppercase;letter-spacing:.05em">Medium impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Well depth &amp; pumping costs</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Groundwater-only properties in critically overdrafted basins increasingly face declining water tables as aggregate pumping continues. Well depth and static water level are unknown for this property. If wells are already deep (600+ feet) and the water table is declining, pumping costs per acre-foot are rising and could reach $300–500/AF — adding $1,000–2,000/ac in annual operating cost for nut crops at full demand. This directly affects tenant economics and their willingness to renew or pay escalating rents. A well log review and pumping test would confirm whether this is material. <strong>Model impact: affects Parcel A cap-rate valuation and Parcel B re-leasing economics at renewal.</strong></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:grid;grid-template-columns:20px 140px 1fr;gap:12px;align-items:start">
+        <div style="width:8px;height:8px;border-radius:50%;background:#7A5010;margin-top:4px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-weight:500;color:#7A5010;text-transform:uppercase;letter-spacing:.05em">Medium impact</div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-top:2px">Orchard age &amp; remaining productive life</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55">Almond and pistachio orchards have productive lives of 25–30 years; peach orchards 15–20 years. The planting year for each block on Lincoln Ave Farm is not confirmed in the case study materials. If the almond and pistachio blocks were planted circa 2000–2005, they are approaching the end of commercial productive life — which means a buyer cannot underwrite to the Nut &amp; Fig Tenant lease income through 2032 at current yield levels, as declining productivity will compress the flex rent true-up regardless of water. Similarly, if the peach orchard was planted in the early 2010s, it has 5–10 years of strong production remaining — supporting the 2028 sale thesis. If planted earlier, the 2028 exit window may need to be pulled forward. <strong>Model impact: affects Parcel A cap-rate valuation meaningfully if orchard age reduces achievable lease income in the buyer's underwriting period. Resolution: request planting records from IFC.</strong></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NEXT STEPS IF RECOMMENDATION ACCEPTED -->
+  <div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px;font-weight:500">If accepted by investment committee — 90-day action plan</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--c-nuts-bg);border:1px solid var(--c-nuts-border);border-radius:4px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:500;color:var(--c-nuts);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Parcel A — Nut Block · Days 1–60</div>
+        <ul style="font-size:12px;color:var(--text);list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-nuts)">→</span> Engage Alliance Ag or Pearson Realty for nut block BOV and marketing strategy</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-nuts)">→</span> Confirm APN parcel structure — determine whether lot-line adjustment required before marketing</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-nuts)">→</span> Review Nut &amp; Fig Tenant lease for assignment / change-of-control provisions</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-nuts)">→</span> Commission updated ASFMRA appraisal reflecting Dec 2025 draft allocation framework</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-nuts)">→</span> Target Q3 2026 LOI with closing Q4 2026 before year-end capital deployment deadlines</li>
+        </ul>
+      </div>
+      <div style="background:var(--c-open-bg);border:1px solid var(--c-open-border);border-radius:4px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:500;color:var(--c-open);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Parcel C — Open Block · Days 1–90</div>
+        <ul style="font-size:12px;color:var(--text);list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-open)">→</span> Commission solar feasibility: PG&E/SCE interconnection queue status, grid proximity, substation capacity</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-open)">→</span> Outreach to Fresno County Assessor on zoning — confirm A-1 ag zoning CUP path for solar</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-open)">→</span> Contact California Farmland Trust and American Farmland Trust re: conservation easement valuation</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-open)">→</span> Pre-screen USDA ACEP (Agricultural Conservation Easement Program) eligibility</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-open)">→</span> Evaluate whether Open Ground Tenant NNN lease (exp. Sep 2029) can be terminated early for conversion</li>
+        </ul>
+      </div>
+      <div style="background:var(--c-peach-bg);border:1px solid var(--c-peach-border);border-radius:4px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:500;color:var(--c-peach);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Parcel B — Peach Block · Days 30–365</div>
+        <ul style="font-size:12px;color:var(--text);list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-peach)">→</span> Confirm stone fruit water sufficiency under MAGSA 10% cumulative reduction (2025 baseline) with Peach Tenant</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-peach)">→</span> Verify 2026 rent escalation has been applied — $700/ac escalates to $714/ac in lease year 3</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-peach)">→</span> Include peach block in annual agronomic review — confirm orchard health and productive life through 2029</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--c-peach)">→</span> Begin broker pre-marketing conversations in Q4 2027 ahead of formal listing in Q1 2028</li>
+        </ul>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:4px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:500;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">LP Reporting &amp; IC Communication · Ongoing</div>
+        <ul style="font-size:12px;color:var(--text);list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--gold)">→</span> Draft IC memo framing disaggregation strategy as active asset management, not distressed exit</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--gold)">→</span> Update Q2 2026 LP report mark-to-market reflecting SGMA draft allocation framework impact on fair value</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--gold)">→</span> Frame solar/easement conversion as precedent-consistent with IFC Great Canal transaction</li>
+          <li style="padding-left:14px;position:relative"><span style="position:absolute;left:0;color:var(--gold)">→</span> Document water reduction schedule assumptions in quarterly reporting for LP transparency</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<footer class="page-footer">
+  <span>Lincoln Ave Farm · Parcel Disaggregation Strategy · IFC Core Fund · Fresno County, CA</span>
+  <span>Prepared by Kody Cobb · April 2026 · Confidential</span>
+  <span>v13 · Proceeds Alignment + IC Gaps · Cost basis $18,527,134 confirmed · Water demand confirmed by IFC 4/22/2026.</span>
+</footer>
+
+<script>
+// MAP — field layout matches Ralph's Lincoln Ave Farm Plantings (2026) map
+// Property: roughly rectangular, top-right corner stepped in (6-sided)
+// Layout L→R: Pistachios | Peaches | Barley+Figs | Almonds
+// Using Kings Subbasin ag coordinates, Fresno County
+const mapCenter = [36.335, -119.72];
+const map = L.map('property-map').setView(mapCenter, 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
+
+const stratColors = {'Sell Now':'#8B2020','Hold → Sell 2028–29':'#2A5C3F','Convert & Monetize':'#1A4A7A'};
+
+// ── Outer boundary: 6-sided shape ──
+// Top edge runs full width. Top-right corner steps INWARD (shorter).
+// This gives the characteristic step seen in Ralph's map.
+const boundary = L.polygon([
+  [36.350, -119.748],   // top-left
+  [36.350, -119.708],   // top-right of main body (full width top)
+  [36.342, -119.700],   // step: top-right corner cuts inward here
+  [36.322, -119.700],   // bottom-right
+  [36.322, -119.748],   // bottom-left
+], {color:'#0D1F2D', weight:2.5, fill:false, dashArray:'5 4'}).addTo(map);
+boundary.bindPopup('<strong>Lincoln Ave Farm</strong><br>1,300 gross acres · Fresno County, CA<br>McMullin Area GSA · Kings Subbasin');
+
+// ── Field polygons ──
+// Columns (W→E): Pistachios | Peaches (full height) | Barley N + Barley/Peach mix | Almonds
+// Rows: upper (~36.336–36.350) and lower (~36.322–36.336)
+// Longitudes: -119.748 | -119.734 | -119.720 | -119.708 | -119.700
+
+const fields = [
+  // PISTACHIOS — far left, full height, 2 sub-blocks (Parcel A)
+  { name:'Pistachios N — 152 ac (Parcel A)', crop:'Sell Now', col:'#96C560',
+    coords:[[36.350,-119.748],[36.350,-119.734],[36.336,-119.734],[36.336,-119.748]] },
+  { name:'Pistachios S — 152 ac (Parcel A)', crop:'Sell Now', col:'#96C560',
+    coords:[[36.336,-119.748],[36.336,-119.734],[36.322,-119.734],[36.322,-119.748]] },
+
+  // PEACHES — left-middle column, full height (Parcel B)
+  // Upper peach block (larger)
+  { name:'Peaches N — 130 ac (Parcel B)', crop:'Hold → Sell 2028–29', col:'#F4A07A',
+    coords:[[36.350,-119.734],[36.350,-119.720],[36.336,-119.720],[36.336,-119.734]] },
+  // Lower peach block
+  { name:'Peaches S — 121 ac (Parcel B)', crop:'Hold → Sell 2028–29', col:'#F4A07A',
+    coords:[[36.336,-119.734],[36.336,-119.720],[36.322,-119.720],[36.322,-119.734]] },
+
+  // BARLEY / OPEN GROUND — right-middle upper (Parcel C, Convert)
+  // Upper: mostly barley (hot pink in original = barley is dominant crop, but this is all Parcel C)
+  { name:'Barley / Open Ground N — 110 ac (Parcel C)', crop:'Convert & Monetize', col:'#8AB4D4',
+    coords:[[36.350,-119.720],[36.350,-119.708],[36.336,-119.708],[36.336,-119.720]] },
+  // Lower portion: mix of barley lower + figs (purple block at bottom-right of middle)
+  { name:'Barley / Figs S — 100 ac (Parcel C)', crop:'Convert & Monetize', col:'#8AB4D4',
+    coords:[[36.336,-119.720],[36.336,-119.708],[36.322,-119.708],[36.322,-119.720]] },
+  // Figs sub-block (small purple area at bottom-right of middle section)
+  { name:'Figs (Open Ground) — ~70 ac (Parcel C)', crop:'Convert & Monetize', col:'#7A5C8A',
+    coords:[[36.336,-119.712],[36.336,-119.708],[36.322,-119.708],[36.322,-119.712]] },
+
+  // ALMONDS — far right (stepped boundary at top-right) (Parcel A)
+  // Upper almond block — bounded by the step in the top-right corner
+  { name:'Almonds N — 84 ac (Parcel A)', crop:'Sell Now', col:'#C8936A',
+    coords:[[36.342,-119.708],[36.342,-119.700],[36.336,-119.700],[36.336,-119.708]] },
+  // Lower almond block — full height on right
+  { name:'Almonds S — 85 ac (Parcel A)', crop:'Sell Now', col:'#C8936A',
+    coords:[[36.336,-119.708],[36.336,-119.700],[36.322,-119.700],[36.322,-119.708]] },
+];
+
+fields.forEach(f => {
+  const poly = L.polygon(f.coords, {
+    color:'#fff', weight:1.5, fillColor:f.col, fillOpacity:.75
+  }).addTo(map);
+  poly.bindPopup(`<strong>${f.name}</strong><br><span style="color:${stratColors[f.crop]};font-weight:500">${f.crop}</span>`);
+  poly.on('mouseover', function(){ this.setStyle({fillOpacity:.95,weight:2.5}) });
+  poly.on('mouseout',  function(){ this.setStyle({fillOpacity:.75,weight:1.5}) });
+});
+
+// TABS
+function showPanel(id,btn){
+  document.querySelectorAll('.model-panel').forEach(p=>p.classList.remove('visible'));
+  document.querySelectorAll('.model-tab').forEach(t=>{t.className='model-tab'});
+  document.getElementById('panel-'+id).classList.add('visible');
+  btn.className='model-tab active-'+id;
+}
+
+// HELPERS
+function fmtM(v){const s=v<0?'−':'';return s+'$'+Math.abs(v/1e6).toFixed(1)+'M'}
+function fmtK(v){const s=v<0?'−':'';return s+'$'+Math.abs(Math.round(v)).toLocaleString()}
+function fmtMid(v){if(Math.abs(v)>=1e6)return fmtM(v);return fmtK(v)}
+function fmtPct(v){const s=v<0?'−':'+';return s+Math.abs(v*100).toFixed(1)+'%'}
+function irrCalc(flows){
+  let r=0.05;
+  for(let i=0;i<120;i++){
+    let npv=0,dnpv=0;
+    flows.forEach((c,t)=>{npv+=c/Math.pow(1+r,t);dnpv-=t*c/Math.pow(1+r,t+1)});
+    if(Math.abs(npv)<0.01)break;
+    if(Math.abs(dnpv)<0.001)break;
+    r-=npv/dnpv;
+    if(r<-0.99)r=-0.99;if(r>5)r=5;
+  }
+  return r;
+}
+
+// NUTS
+function calcNuts(){
+  const lv=parseInt(document.getElementById('n-lv').value);
+  const ac=parseInt(document.getElementById('n-ac').value);
+  const fr=parseInt(document.getElementById('n-fr').value);
+  const cr=parseFloat(document.getElementById('n-cr').value);
+  const ep=parseInt(document.getElementById('n-ep').value);
+  const ay=parseInt(document.getElementById('n-ay').value);
+  const _s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  _s('n-lv-lbl','$'+lv.toLocaleString());
+  _s('n-fr-lbl',fr+'%');
+  _s('n-cr-lbl',cr.toFixed(2)+'%');
+  const rent=830825*(fr/100);
+  const lvTotal=lv*ac;
+  const capTotal=rent/(cr/100);
+  const blend=(lvTotal*0.6+capTotal*0.4);
+  const cost=ep*(ac/1300*1300);
+  const costAlloc=ep*ac;
+  const yearsHeld=2026-ay;
+  const flows=[-costAlloc];
+  for(let y=1;y<=yearsHeld;y++)flows.push(y<yearsHeld?rent:rent+blend);
+  const irr=irrCalc(flows);
+  document.getElementById('n-rent').textContent=fmtK(rent);
+  document.getElementById('n-rpa').textContent='$'+Math.round(rent/ac).toLocaleString();
+  document.getElementById('n-lv-total').textContent=fmtM(lvTotal);
+  document.getElementById('n-cap-total').textContent=fmtM(capTotal);
+  document.getElementById('n-blend').textContent=fmtM(blend);
+  document.getElementById('n-cost').textContent=fmtM(costAlloc);
+  const gl=blend-costAlloc;
+  const glEl=document.getElementById('n-gl');
+  glEl.textContent=fmtM(gl);glEl.className='out-val '+(gl>=0?'pos':'neg');
+  const irrEl=document.getElementById('n-irr');
+  irrEl.textContent=isNaN(irr)?'N/M':fmtPct(irr);
+  irrEl.className='out-val '+(irr>=.07?'pos':irr>=0?'neu':'neg');
+  const verd=document.getElementById('n-verdict');
+  verd.style.background='#FDF0EE';verd.style.border='1px solid #D4836A';verd.style.color='#6B2010';
+  verd.innerHTML='<strong>Sell now recommended.</strong> Tenant lease through 2032 provides buyer underwriting support. Delay risks commodity-driven flex rent compression and progressive SGMA impairment reducing buyer pool and pricing.';
+  updateSummary();
+}
+
+// PEACH
+function calcPeach(){
+  const br=parseInt(document.getElementById('p-br').value);
+  const esc=parseFloat(document.getElementById('p-esc').value);
+  const ac=parseInt(document.getElementById('p-ac').value);
+  const sy=parseInt(document.getElementById('p-sy').value);
+  const lv=parseInt(document.getElementById('p-lv').value);
+  const ep=parseInt(document.getElementById('p-ep').value);
+  const _sp=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  _sp('p-sy-lbl',sy);
+  _sp('p-lv-lbl','$'+lv.toLocaleString());
+  
+  const r26=br*ac;
+  let cum=0;
+  for(let y=2026;y<sy;y++) cum+=br*ac*Math.pow(1+esc/100,y-2026);
+  const rentAtSale=br*Math.pow(1+esc/100,sy-2026);
+  const saleVal=lv*ac;
+  const total=cum+saleVal;
+  const costAlloc=ep*ac;
+  const ay=parseInt(document.getElementById('n-ay').value)||2021;
+  const yearsHeld=sy-ay;
+  const flows=[-costAlloc];
+  let cumY=0;
+  for(let y=1;y<=yearsHeld;y++){
+    const yr=ay+y;
+    const rent=yr>=2026?br*ac*Math.pow(1+esc/100,Math.max(0,yr-2026)):0;
+    cumY+=rent;
+    flows.push(yr<ay+yearsHeld?rent:rent+saleVal);
+  }
+  const irr=irrCalc(flows);
+  document.getElementById('p-r26').textContent=fmtK(r26);
+  document.getElementById('p-cum').textContent=fmtMid(cum);
+  document.getElementById('p-rsy').textContent='$'+Math.round(rentAtSale).toLocaleString();
+  document.getElementById('p-sv').textContent=fmtM(saleVal);
+  document.getElementById('p-total').textContent=fmtM(total);
+  document.getElementById('p-cost').textContent=fmtM(costAlloc);
+  const gl=total-costAlloc;
+  const glEl=document.getElementById('p-gl');
+  glEl.textContent=fmtM(gl);glEl.className='out-val '+(gl>=0?'pos':'neg');
+  const irrEl=document.getElementById('p-irr');
+  irrEl.textContent=isNaN(irr)?'N/M':fmtPct(irr);
+  irrEl.className='out-val '+(irr>=.07?'pos':irr>=0?'neu':'neg');
+  const verd=document.getElementById('p-verdict');
+  verd.style.background='#EBF6F0';verd.style.border='1px solid #6BB88A';verd.style.color='#1A4A2A';
+  verd.innerHTML=`<strong>Hold through lease expiry recommended.</strong> 2% annual escalation compounds meaningfully over ${sy-2026} years. Stone fruit water sensitivity is lower than nuts. Sell in ${sy} with producing orchard in ground to a dedicated stone fruit buyer.`;
+  updateSummary();
+}
+
+// OPEN — strategy-aware cost model
+// KEY INSIGHT: Developer pays ALL construction CapEx. IFC pays only:
+//   Solar: entitlement/legal, Williamson Act cancellation fee, broker, feasibility study
+//   Conservation easement: legal/documentation, stewardship endowment (10-15% of value), broker
+//   BESS: similar to solar — entitlement/legal, broker, feasibility
+//   Status quo: no conversion costs
+function calcOpen(){
+  const ac=parseInt(document.getElementById('o-ac').value);
+  const strat=document.getElementById('o-strat').value;
+  const inc=parseInt(document.getElementById('o-inc').value);
+  const cap=parseFloat(document.getElementById('o-cap').value);
+  document.getElementById('o-ac-lbl').textContent=ac;
+  document.getElementById('o-inc-lbl').textContent='$'+inc.toLocaleString();
+  document.getElementById('o-cap-lbl').textContent=cap.toFixed(2)+'%';
+
+  const newInc=inc*ac;
+  const gross=strat==='conservation'?inc*ac*8:newInc/(cap/100);
+  const sqVal=49709/(5.5/100);
+  const uplift=newInc-49709;
+
+  // ── Strategy-specific IFC cost components ──
+  // Williamson Act cancellation: 12.5% of FMV if enrolled (~$8K/ac × 12.5%)
+  const waFMV=ac*8000; // conservative FMV estimate for ag land in MAGSA
+  const waCancelFee=waFMV*0.125;
+  // Broker/advisor: 3-4% of capitalized gross value
+  const brokerFee=gross*0.035;
+  // Legal/entitlement/CEQA (solar, BESS): ~$200K–$400K flat
+  const legalEntitle=300000;
+  // Grid feasibility study (solar, BESS): ~$25K
+  const feasibility=25000;
+  // Conservation easement: legal/doc (~$75K) + stewardship endowment (12% of gross value)
+  const ceDocLegal=75000;
+  const ceEndowment=gross*0.12;
+
+  let costs={};
+  if(strat==='solar'){
+    costs={
+      entitle:{label:'Entitlement / CEQA / legal',val:legalEntitle,note:'CUP + CEQA review + county hearings'},
+      williamson:{label:'Williamson Act cancellation fee',val:waCancelFee,note:'12.5% of FMV if enrolled — confirm with title'},
+      broker:{label:'Solar land advisor fee (3.5%)',val:brokerFee,note:'Specialized solar land broker'},
+      feasibility:{label:'Grid / interconnection feasibility',val:feasibility,note:'Pre-development study (developer pays buildout)'},
+    };
+  } else if(strat==='conservation'){
+    costs={
+      broker:{label:'Transaction / legal / documentation',val:ceDocLegal,note:'Deed restriction, baseline, title work'},
+      stewardship:{label:'Stewardship endowment (12%)',val:ceEndowment,note:'One-time payment to land trust for ongoing monitoring'},
+    };
+  } else if(strat==='bess'){
+    costs={
+      entitle:{label:'Entitlement / legal / permitting',val:legalEntitle,note:'Similar path to solar — CUP required'},
+      williamson:{label:'Williamson Act cancellation fee',val:waCancelFee,note:'12.5% of FMV if enrolled'},
+      broker:{label:'BESS land advisor fee (3.5%)',val:brokerFee,note:'Developer pays all construction CapEx'},
+      feasibility:{label:'Grid / transmission feasibility',val:feasibility,note:'Pre-development study'},
+    };
+  } else {
+    costs={};
+  }
+
+  const totalCost=Object.values(costs).reduce((s,c)=>s+c.val,0);
+  const net=gross-totalCost;
+  const upl2=net-sqVal;
+
+  // ── Update cost breakdown panel ──
+  const breakdown=document.getElementById('o-cost-breakdown');
+  const lines=document.getElementById('o-cost-lines');
+  if(strat==='status'){
+    breakdown.style.display='none';
+  } else {
+    breakdown.style.display='block';
+    lines.innerHTML=Object.entries(costs).map(([k,c])=>
+      `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+        <div>
+          <div style="font-size:11px;color:var(--text)">${c.label}</div>
+          <div style="font-size:10px;color:var(--muted);font-style:italic">${c.note}</div>
+        </div>
+        <span style="font-size:12px;font-weight:500;color:var(--c-nuts);white-space:nowrap;margin-left:8px">−${fmtK(c.val)}</span>
+      </div>`
+    ).join('');
+    document.getElementById('o-cost-total').textContent=fmtK(totalCost);
+  }
+
+  // ── Show/hide output rows based on strategy ──
+  const show=(id,vis)=>{const el=document.getElementById(id);if(el)el.style.display=vis?'flex':'none';};
+  show('o-row-entitle', strat==='solar'||strat==='bess');
+  show('o-row-williamson', strat==='solar'||strat==='bess');
+  show('o-row-broker', strat!=='status');
+  show('o-row-stewardship', strat==='conservation');
+  show('o-row-feasibility', strat==='solar'||strat==='bess');
+
+  // Update individual row values
+  const setRow=(valId,lblId,val,lbl)=>{
+    const v=document.getElementById(valId);const l=document.getElementById(lblId);
+    if(v)v.textContent='−'+fmtK(val);
+    if(l&&lbl)l.textContent=lbl;
+  };
+  if(costs.entitle) setRow('o-val-entitle','o-lbl-entitle',costs.entitle.val,costs.entitle.label);
+  if(costs.williamson) document.getElementById('o-val-williamson').textContent='−'+fmtK(costs.williamson.val);
+  if(costs.broker){ const el=document.getElementById('o-val-broker');if(el)el.textContent='−'+fmtK(costs.broker.val); const l=document.getElementById('o-lbl-broker');if(l)l.textContent=costs.broker.label; }
+  if(costs.stewardship) document.getElementById('o-val-stewardship').textContent='−'+fmtK(costs.stewardship.val);
+  if(costs.feasibility) document.getElementById('o-val-feasibility').textContent='−'+fmtK(costs.feasibility.val);
+
+  // Update output cells
+  document.getElementById('o-new-inc').textContent=fmtK(newInc);
+  document.getElementById('o-uplift').textContent=(uplift>=0?'+':'')+fmtK(uplift);
+  document.getElementById('o-uplift').className='out-val '+(uplift>=0?'pos':'neg');
+  document.getElementById('o-gross').textContent=fmtM(gross);
+  document.getElementById('o-devcost').textContent='−'+fmtK(totalCost);
+  const netEl=document.getElementById('o-net');
+  netEl.textContent=fmtM(net);
+  netEl.className='out-val purple';
+  document.getElementById('o-sq').textContent=fmtM(sqVal);
+  const uEl=document.getElementById('o-uplift2');
+  uEl.textContent=(upl2>=0?'+':'')+fmtM(upl2);uEl.className='out-val '+(upl2>=0?'pos':'neg');
+
+  // Verdict
+  const stratLabels={'solar':'solar ground lease','conservation':'conservation easement','bess':'BESS ground lease','status':'status quo'};
+  const verd=document.getElementById('o-verdict');
+  if(strat==='status'){
+    verd.style.cssText='background:#FDF0EE;border:1px solid #D4836A;color:#6B2010;margin-top:14px;padding:12px 14px;border-radius:4px;font-size:12px;line-height:1.55';
+    verd.innerHTML='<strong>Status quo is the weakest outcome.</strong> $150/ac on ~390 acres leaves significant value uncaptured. The developer pays all construction CapEx on any conversion — IFC\'s costs are legal and transaction fees only.';
+  } else {
+    verd.style.cssText='background:#EEF4FB;border:1px solid #85B7EB;color:#0C447C;margin-top:14px;padding:12px 14px;border-radius:4px;font-size:12px;line-height:1.55';
+    const devNote=strat==='conservation'?'Land trust or USDA ACEP pays IFC the lump sum. No construction involved.':'The solar/BESS developer pays 100% of construction CapEx — panels, inverters, grid tie-in. IFC only bears legal, permitting, and brokerage costs.';
+    verd.innerHTML=`<strong>Conversion to ${stratLabels[strat]} recommended.</strong> ${devNote} Net proceeds of ${fmtM(net)} vs. status quo value of ${fmtM(sqVal)}.`;
+  }
+  updateSummary();
+}
+
+
+function updateSummary(){
+  // Nuts
+  const nlv=parseInt(document.getElementById('n-lv').value);
+  const nac=parseInt(document.getElementById('n-ac').value);
+  const nfr=parseInt(document.getElementById('n-fr').value);
+  const ncr=parseFloat(document.getElementById('n-cr').value);
+  const nRent=830825*(nfr/100);
+  const nLvT=nlv*nac;const nCapT=nRent/(ncr/100);
+  const nBlend=nLvT*0.6+nCapT*0.4;
+
+  // Peach
+  const pbr=parseInt(document.getElementById('p-br').value);
+  const pesc=parseFloat(document.getElementById('p-esc').value);
+  const pac=parseInt(document.getElementById('p-ac').value);
+  const psy=parseInt(document.getElementById('p-sy').value);
+  const plv=parseInt(document.getElementById('p-lv').value);
+  let pCum=0;for(let y=2026;y<psy;y++)pCum+=pbr*pac*Math.pow(1+pesc/100,y-2026);
+  const pSale=plv*pac;const pTotal=pCum+pSale;
+
+  // Open — recompute costs same way calcOpen does (no o-dev slider anymore)
+  const oac=parseInt(document.getElementById('o-ac').value);
+  const oinc=parseInt(document.getElementById('o-inc').value);
+  const ocap=parseFloat(document.getElementById('o-cap').value);
+  const ostrat=document.getElementById('o-strat').value;
+  const oNewInc=oinc*oac;
+  const oGross=ostrat==='conservation'?oinc*oac*8:oNewInc/(ocap/100);
+  // Recompute IFC costs by strategy
+  const waFMVs=oac*8000;const waCancelFees=waFMVs*0.125;
+  const brokerFees=oGross*0.035;const legalS=300000;const feasS=25000;
+  const ceDocS=75000;const ceEndowS=oGross*0.12;
+  let oTotalCost=0;
+  if(ostrat==='solar')oTotalCost=legalS+waCancelFees+brokerFees+feasS;
+  else if(ostrat==='conservation')oTotalCost=ceDocS+ceEndowS;
+  else if(ostrat==='bess')oTotalCost=legalS+waCancelFees+brokerFees+feasS;
+  const oNet=oGross-oTotalCost;
+
+  const grandTotal=nBlend+pTotal+oNet;
+
+  document.getElementById('sum-a').textContent=fmtM(nBlend);
+  document.getElementById('sum-b').textContent=fmtM(pTotal);
+  document.getElementById('sum-c').textContent=fmtM(oNet);
+  document.getElementById('sum-rent').textContent=fmtM(pCum);
+  document.getElementById('sum-total').textContent=fmtM(grandTotal);
+
+  document.getElementById('nuts-total-display').textContent=fmtM(nLvT)+' – '+fmtM(nCapT);
+  document.getElementById('peach-total-display').textContent=fmtM(pSale)+' + '+fmtM(pCum)+' rent';
+  document.getElementById('open-total-display').textContent=fmtM(oNet)+' net';
+
+  document.getElementById('t-a-val').textContent=fmtM(nBlend);
+  document.getElementById('t-b-val').textContent=fmtM(pTotal);
+  document.getElementById('t-c-val').textContent=fmtM(oNet);
+  document.getElementById('t-total').textContent=fmtM(grandTotal);
+
+  calcPortfolioIRR();
+}
+
+// ══════════════════════════════════════════════════════════════
+// PORTFOLIO IRR — consolidated timeline across all three parcels
+// ══════════════════════════════════════════════════════════════
+function calcPortfolioIRR() {
+  // ── Read all inputs ──
+  const nlv=parseInt(document.getElementById('n-lv').value);
+  const nac=parseInt(document.getElementById('n-ac').value);
+  const nfr=parseInt(document.getElementById('n-fr').value);
+  const ncr=parseFloat(document.getElementById('n-cr').value);
+  const nRent=830825*(nfr/100);
+  const nBlend=(nlv*nac*0.6)+((nRent/(ncr/100))*0.4);
+
+  const pbr=parseInt(document.getElementById('p-br').value);
+  const pesc=parseFloat(document.getElementById('p-esc').value);
+  const pac=parseInt(document.getElementById('p-ac').value);
+  const psy=parseInt(document.getElementById('p-sy').value);
+  const plv=parseInt(document.getElementById('p-lv').value);
+
+  const oac=parseInt(document.getElementById('o-ac').value);
+  const oinc=parseInt(document.getElementById('o-inc').value);
+  const ocap=parseFloat(document.getElementById('o-cap').value);
+  const ostrat=document.getElementById('o-strat').value;
+
+  // Parcel C new IRR sliders
+  const irrCyr = parseFloat(document.getElementById('irr-cyr').value);  // yrs to close
+  const irrApp = parseFloat(document.getElementById('irr-app').value);  // land appreciation %/yr
+  const irrPpa = parseInt(document.getElementById('irr-ppa').value);    // gross proceeds /ac
+
+  // Update Parcel C labels
+  document.getElementById('irr-cyr-lbl').textContent=irrCyr+' yrs';
+  document.getElementById('irr-app-lbl').textContent=(irrApp>=0?'+':'')+irrApp.toFixed(1)+'%';
+  document.getElementById('irr-ppa-lbl').textContent='$'+irrPpa.toLocaleString();
+
+  // ── Parcel C: apply land appreciation and compute net proceeds ──
+  const oGrossPPA = irrPpa * Math.pow(1 + irrApp/100, irrCyr); // per-acre appreciated value
+  const oGrossTotal = ostrat==='conservation' ? oGrossPPA*oac : oGrossPPA*oac; // same either way — slider IS the gross $/ac
+  const waFMV=oac*8000; const waCancel=waFMV*0.125;
+  const broker=oGrossTotal*0.035; const legal=300000; const feas=25000;
+  const ceDoc=75000; const ceEndow=oGrossTotal*0.12;
+  let oTotalCost=0;
+  if(ostrat==='solar'||ostrat==='bess')oTotalCost=legal+waCancel+broker+feas;
+  else if(ostrat==='conservation')oTotalCost=ceDoc+ceEndow;
+  const oNet=oGrossTotal-oTotalCost;
+
+  // Exit year for Parcel C
+  const cExitYear = Math.round(2026 + irrCyr);
+  const bExitYear = psy;
+
+  // ── Build annual cash flow array ──
+  // Year 0 = 2022 (acquisition). Each index = calendar year - 2022.
+  // Max year = whichever parcel exits last
+  const maxYear = Math.max(2026, bExitYear, cExitYear);
+  const numPeriods = maxYear - 2022 + 1;
+  const flows = new Array(numPeriods).fill(0);
+
+  // Day 1 outflow: full cost basis
+  const costBasis = 18527134;
+  flows[0] = -costBasis;
+
+  // ── Historical NOI (already collected) ──
+  // 2022 partial (index 0): $645,063 — add to year 0 net
+  flows[0] += 645063;
+  flows[1] += 888298;  // 2023
+  flows[2] += 448617;  // 2024
+  flows[3] += 1036179; // 2025
+
+  // ── 2026 forward: pro-rata rent from each parcel while running ──
+  // Parcel A: nut block sells H2 2026 → collect ~0.5 yr of nut rent in 2026
+  const nutRent2026 = nRent * 0.5;
+  flows[4] += nutRent2026; // index 4 = 2026
+
+  // Parcel A sale proceeds land in 2026
+  flows[4] += nBlend;
+
+  // Parcel B: collect rent 2026 through year before sale, then sale + final rent
+  for (let yr = 2026; yr <= bExitYear; yr++) {
+    const idx = yr - 2022;
+    if (idx < 0 || idx >= numPeriods) continue;
+    const rent = pbr * pac * Math.pow(1 + pesc/100, yr - 2026);
+    if (yr < bExitYear) {
+      flows[idx] += rent;
+    } else {
+      // sale year: final rent + sale proceeds
+      flows[idx] += rent + (plv * pac);
+    }
+  }
+
+  // Parcel C: barley rent until conversion closes, then net conversion proceeds
+  const barleyRent = 49709; // annual
+  for (let yr = 2026; yr < cExitYear; yr++) {
+    const idx = yr - 2022;
+    if (idx >= 0 && idx < numPeriods) flows[idx] += barleyRent;
+  }
+  const cIdx = cExitYear - 2022;
+  if (cIdx >= 0 && cIdx < numPeriods) flows[cIdx] += oNet;
+
+  // ── Calculate IRR ──
+  const portfolioIRR = irrCalc(flows);
+
+  // ── MOIC and gain ──
+  // ── Parcel B peach cumulative rent (rent + sale) ──
+  let pCumFwd = 0;
+  for(let y=2026;y<bExitYear;y++) pCumFwd+=pbr*pac*Math.pow(1+pesc/100,y-2026);
+  const pTotal = pCumFwd + (plv*pac);
+
+  // totalProceeds = forward exit proceeds only (matches parcel summary table)
+  const totalProceeds = nBlend + pTotal + oNet;
+  const histNOI = 645063+888298+448617+1036179;
+  // allInflows includes histNOI for IRR and MOIC calculations only
+  const allInflows = totalProceeds + histNOI;
+  const moic = allInflows / costBasis;
+  const gl = allInflows - costBasis;
+
+  // ── Update display ──
+  document.getElementById('irr-a-proc').textContent = fmtM(nBlend);
+  document.getElementById('irr-b-proc').textContent = fmtM(pTotal);
+  document.getElementById('irr-c-proc').textContent = fmtM(oNet);
+  document.getElementById('irr-gross-total').textContent = fmtM(allInflows);
+  document.getElementById('irr-moic').textContent = moic.toFixed(2)+'x';
+  const glEl = document.getElementById('irr-gl');
+  glEl.textContent = (gl>=0?'+':'')+fmtM(gl);
+  glEl.className = 'out-val ' + (gl>=0?'pos':'neg');
+  const irrEl = document.getElementById('irr-portfolio');
+  irrEl.textContent = isNaN(portfolioIRR)?'N/M':fmtPct(portfolioIRR);
+  irrEl.className = 'out-val ' + (portfolioIRR>=0.07?'pos':portfolioIRR>=0?'neu':'neg');
+
+  // Update exit year labels in summary table
+  const tbyr = document.getElementById('t-b-yr'); if(tbyr) tbyr.textContent = bExitYear;
+  const tcyr = document.getElementById('t-c-yr'); if(tcyr) tcyr.textContent = cExitYear;
+  document.getElementById('t-a-val').textContent = fmtM(nBlend);
+  document.getElementById('t-b-val').textContent = fmtM(pTotal);
+  document.getElementById('t-c-val').textContent = fmtM(oNet);
+  document.getElementById('t-total').textContent = fmtM(totalProceeds);
+
+  // ── Build cash flow timeline table ──
+  const cfEl = document.getElementById('cf-timeline');
+  let rows = '';
+  for (let i = 0; i < flows.length; i++) {
+    const yr = 2022 + i;
+    const v = flows[i];
+    if (v === 0) continue;
+    const isNeg = v < 0;
+    const bar = Math.min(Math.abs(v)/costBasis*100, 100);
+    const barColor = isNeg ? '#D4836A' : (yr<=2025?'#8AB4D4':yr===cExitYear?'var(--c-open)':yr===2026?'var(--c-nuts)':'var(--c-peach)');
+    const label = yr===2022?'Acquisition + partial income':yr<=2025?'NOI':yr===2026?'Nut sale + rent':yr===cExitYear&&yr===bExitYear?'Peach sale + conversion':yr===cExitYear?'Open ground conversion':yr===bExitYear?'Peach block sale':'Rent';
+    rows += `<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid #EDE8E0">
+      <span style="font-size:11px;font-weight:500;color:var(--muted);width:34px;flex-shrink:0">${yr}</span>
+      <div style="flex:1;height:5px;background:#EDE8E0;border-radius:2px">
+        <div style="width:${bar}%;height:5px;background:${barColor};border-radius:2px"></div>
+      </div>
+      <span style="font-size:11px;font-weight:500;color:${isNeg?'var(--c-nuts)':'var(--c-peach)'};width:64px;text-align:right;flex-shrink:0">${isNeg?'−':'+'+''}${fmtM(Math.abs(v))}</span>
+      <span style="font-size:10px;color:var(--muted);width:140px;flex-shrink:0">${label}</span>
+    </div>`;
+  }
+  cfEl.innerHTML = rows;
+
+  // ── IRR verdict ──
+  const verd = document.getElementById('irr-verdict');
+  const irrPct = isNaN(portfolioIRR) ? null : portfolioIRR*100;
+  const stratName = {solar:'Solar ground lease',conservation:'Conservation easement',bess:'BESS lease',status:'Status quo'}[ostrat];
+  let msg = '';
+  if (irrPct === null) {
+    msg = 'Cash flows do not produce a solvable IRR under current assumptions.';
+  } else if (irrPct < 0) {
+    msg = `Portfolio IRR of ${fmtPct(portfolioIRR)} reflects a realized loss on the $18.5M 2022 cost basis. The disaggregation strategy minimizes the loss versus a whole-farm blended sale — it does not eliminate it. The Parcel C ${stratName.toLowerCase()} is the largest single recovery lever.`;
+  } else if (irrPct < 5) {
+    msg = `Portfolio IRR of ${fmtPct(portfolioIRR)} is below typical farmland hurdle rates (6–8%) but positive. This reflects entry at peak 2022 valuations into an asset with structural water impairment. Disaggregation outperforms whole-farm sale — the gap is the value of the strategy.`;
+  } else {
+    msg = `Portfolio IRR of ${fmtPct(portfolioIRR)} meets or approaches typical farmland return targets. The Parcel C ${stratName.toLowerCase()} and the Parcel B hold-and-escalate structure are doing meaningful work in the return profile.`;
+  }
+  verd.textContent = msg;
+
+  // ── Update at-a-glance table (live row 3 — disaggregated) ──
+  const histNOIval = 645063+888298+448617+1036179;
+  const agaAllIn = totalProceeds + histNOIval;
+  const agaMoic = agaAllIn / costBasis;
+  const agaGl = agaAllIn - costBasis;
+  const agaTotalEl = document.getElementById('aga-total');
+  const agaMoicEl = document.getElementById('aga-moic');
+  const agaIrrEl = document.getElementById('aga-irr');
+  const agaGlEl = document.getElementById('aga-gl');
+  if(agaTotalEl) agaTotalEl.textContent = fmtM(totalProceeds);
+  if(agaMoicEl) agaMoicEl.textContent = agaMoic.toFixed(2)+'x';
+  if(agaIrrEl){
+    agaIrrEl.textContent = isNaN(portfolioIRR)?'N/M':fmtPct(portfolioIRR);
+    agaIrrEl.style.color = portfolioIRR>=0.07?'var(--c-peach)':portfolioIRR>=0?'#7A5010':'var(--c-nuts)';
+  }
+  if(agaGlEl){
+    agaGlEl.textContent = (agaGl>=0?'+':'')+fmtM(agaGl);
+    agaGlEl.style.color = agaGl>=0?'var(--c-peach)':'var(--c-nuts)';
+  }
+}
+
+
+// Init
+calcNuts();calcPeach();calcOpen();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let waterfallChart = null;
+
+function calcCompare() {
+  const wfPpa = parseInt(document.getElementById('wf-ppa').value);
+  const wfCr = parseFloat(document.getElementById('wf-cr').value);
+  const wfDisc = parseInt(document.getElementById('wf-disc').value);
+
+  document.getElementById('wf-ppa-lbl').textContent = '$' + wfPpa.toLocaleString();
+  document.getElementById('wf-cr-lbl').textContent = wfCr.toFixed(2) + '%';
+  document.getElementById('wf-disc-lbl').textContent = wfDisc + '%';
+
+  // Whole farm
+  const tillable = 1190;
+  const totalRent = 830825 + 258633;
+  const grossLandVal = wfPpa * tillable;
+  const sgmaDiscount = grossLandVal * (wfDisc / 100);
+  const discountedLandVal = grossLandVal - sgmaDiscount;
+  const capImplied = totalRent / (wfCr / 100);
+  const wfNet = (discountedLandVal * 0.6 + capImplied * 0.4);
+
+  document.getElementById('wf-ppa-out').textContent = '$' + wfPpa.toLocaleString();
+  document.getElementById('wf-gross').textContent = fmtM(grossLandVal);
+  document.getElementById('wf-disc-out').textContent = '−' + fmtM(sgmaDiscount);
+  document.getElementById('wf-cap-out').textContent = fmtM(capImplied);
+  document.getElementById('wf-net').textContent = fmtM(wfNet);
+
+  // Whole farm IRR
+  const ep = parseInt(document.getElementById('n-ep').value) || 14252;
+  const ay = parseInt(document.getElementById('n-ay').value) || 2022;
+  const yearsHeld = 2026 - ay;
+  const wfCost = ep * tillable;
+  const wfFlows = [-wfCost];
+  for (let y = 1; y <= yearsHeld; y++) wfFlows.push(y < yearsHeld ? totalRent : totalRent + wfNet);
+  const wfIrr = irrCalc(wfFlows);
+  const wfIrrEl = document.getElementById('wf-irr');
+  wfIrrEl.textContent = isNaN(wfIrr) ? 'N/M' : fmtPct(wfIrr);
+  wfIrrEl.className = 'out-val ' + (wfIrr >= 0.06 ? 'pos' : wfIrr >= 0 ? 'neu' : 'neg');
+
+  // Disaggregated — pull from other panels
+  const nlv = parseInt(document.getElementById('n-lv').value);
+  const nac = parseInt(document.getElementById('n-ac').value);
+  const nfr = parseInt(document.getElementById('n-fr').value);
+  const ncr = parseFloat(document.getElementById('n-cr').value);
+  const nRent = 830825 * (nfr / 100);
+  const nLvT = nlv * nac;
+  const nCapT = nRent / (ncr / 100);
+  const nBlend = nLvT * 0.6 + nCapT * 0.4;
+
+  const pbr = parseInt(document.getElementById('p-br').value);
+  const pesc = parseFloat(document.getElementById('p-esc').value);
+  const pac = parseInt(document.getElementById('p-ac').value);
+  const psy = parseInt(document.getElementById('p-sy').value);
+  const plv = parseInt(document.getElementById('p-lv').value);
+  let pCum = 0;
+  for (let y = 2026; y < psy; y++) pCum += pbr * pac * Math.pow(1 + pesc / 100, y - 2026);
+  const pSale = plv * pac;
+  const pTotal = pCum + pSale;
+
+  const oac = parseInt(document.getElementById('o-ac').value);
+  const oinc = parseInt(document.getElementById('o-inc').value);
+  const ocap = parseFloat(document.getElementById('o-cap').value);
+  const ostrat = document.getElementById('o-strat').value;
+  const oNewInc = oinc * oac;
+  const oGross = ostrat === 'conservation' ? oinc * oac * 8 : oNewInc / (ocap / 100);
+  const waFMVc=oac*8000;const waCancelFeeC=waFMVc*0.125;
+  const brokerFeeC=oGross*0.035;const legalC=300000;const feasC=25000;
+  const ceDocC=75000;const ceEndowC=oGross*0.12;
+  let oTotalCostC=0;
+  if(ostrat==='solar')oTotalCostC=legalC+waCancelFeeC+brokerFeeC+feasC;
+  else if(ostrat==='conservation')oTotalCostC=ceDocC+ceEndowC;
+  else if(ostrat==='bess')oTotalCostC=legalC+waCancelFeeC+brokerFeeC+feasC;
+  const oNet = oGross - oTotalCostC;
+
+  const disaggTotal = nBlend + pTotal + oNet;
+  const delta = disaggTotal - wfNet;
+
+  // Portfolio IRR for Option B — reuse same timeline logic as calcPortfolioIRR
+  const irrCyrC = parseFloat(document.getElementById('irr-cyr')?.value||1.5);
+  const irrAppC = parseFloat(document.getElementById('irr-app')?.value||0);
+  const irrPpaC = parseInt(document.getElementById('irr-ppa')?.value||20000);
+  const cExitYrC = Math.round(2026 + irrCyrC);
+  const bExitYrC = psy;
+  const costBasisC = 18527134;
+  const maxYrC = Math.max(2026, bExitYrC, cExitYrC);
+  const nPeriodsC = maxYrC - 2022 + 1;
+  const flowsC = new Array(nPeriodsC).fill(0);
+  flowsC[0] = -costBasisC + 645063;
+  flowsC[1] += 888298; flowsC[2] += 448617; flowsC[3] += 1036179;
+  flowsC[4] += nBlend + nRent*0.5;
+  for(let yr=2026;yr<=bExitYrC;yr++){
+    const idx=yr-2022; if(idx<0||idx>=nPeriodsC)continue;
+    const rent=pbr*pac*Math.pow(1+pesc/100,yr-2026);
+    if(yr<bExitYrC)flowsC[idx]+=rent; else flowsC[idx]+=rent+(plv*pac);
+  }
+  for(let yr=2026;yr<cExitYrC;yr++){const idx=yr-2022;if(idx>=0&&idx<nPeriodsC)flowsC[idx]+=49709;}
+  const oGrossPpaC=irrPpaC*Math.pow(1+irrAppC/100,irrCyrC)*oac;
+  const waFMVC=oac*8000; const oStratC=ostrat;
+  let oNetC=oGrossPpaC;
+  if(oStratC==='solar'||oStratC==='bess')oNetC-=(300000+waFMVC*0.125+oGrossPpaC*0.035+25000);
+  else if(oStratC==='conservation')oNetC-=(75000+oGrossPpaC*0.12);
+  const cIdxC=cExitYrC-2022; if(cIdxC>=0&&cIdxC<nPeriodsC)flowsC[cIdxC]+=oNetC;
+  const disaggIRR=irrCalc(flowsC);
+  const cirrEl=document.getElementById('cmp-irr-disagg');
+  if(cirrEl){
+    cirrEl.textContent=isNaN(disaggIRR)?'N/M':fmtPct(disaggIRR);
+    cirrEl.className='out-val '+(disaggIRR>=0.07?'pos':disaggIRR>=0?'neu':'neg');
+  }
+
+  document.getElementById('cmp-a').textContent = fmtM(nBlend);
+  document.getElementById('cmp-b').textContent = fmtM(pTotal);
+  document.getElementById('cmp-c').textContent = fmtM(oNet);
+  document.getElementById('cmp-total').textContent = fmtM(disaggTotal);
+  const deltaEl = document.getElementById('cmp-delta');
+  deltaEl.textContent = (delta >= 0 ? '+' : '') + fmtM(delta);
+  deltaEl.className = 'out-val ' + (delta >= 0 ? 'pos' : 'neg');
+
+  // Waterfall chart
+  buildWaterfall(wfNet, nBlend, pTotal, oNet, disaggTotal);
+}
+
+function buildWaterfall(wfNet, nutVal, peachVal, openVal, disaggTotal) {
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const textCol = isDark ? '#B4B2A9' : '#5A6B77';
+  const gridCol = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+
+  // Waterfall: whole-farm | +nut uplift | +peach uplift | +open uplift | disagg total
+  // Each bar is either floating (uplift) or absolute (start/end)
+  const wfM = wfNet / 1e6;
+  const nutM = nutVal / 1e6;
+  const peachM = peachVal / 1e6;
+  const openM = openVal / 1e6;
+  const disaggM = disaggTotal / 1e6;
+
+  // For a waterfall we compute running base for each uplift bar
+  // Whole-farm: base=0, val=wfM
+  // Nut uplift: how much more than wf * (nut/disagg share) vs wf * (nut/disagg share)?
+  // Simpler: show absolute bars with a meaningful baseline
+  const wfNutShare = wfM * (473 / 1190);
+  const wfPeachShare = wfM * (251 / 1190);
+  const wfOpenShare = wfM * (466 / 1190);
+
+  const nutUplift = Math.max(0, nutM - wfNutShare);
+  const peachUplift = Math.max(0, peachM - wfPeachShare);
+  const openUplift = Math.max(0, openM - wfOpenShare);
+
+  const labels = [
+    'Whole-farm\nsale', 'Nut Block\npremium', 'Peach Block\nrent + sale', 'Open Block\nconversion', 'Disaggregated\ntotal'];
+
+  // Stacked bar: base (transparent) + visible bar
+  // Bar 0: whole farm solid
+  // Bar 1–3: floating uplifts
+  // Bar 4: disagg total solid
+
+  const bases = [0, wfM, wfM + nutUplift, wfM + nutUplift + peachUplift, 0];
+  const values = [wfM, nutUplift, peachUplift, openUplift, disaggM];
+  const colors = [
+    isDark ? '#24465E' : '#8AB4D4',
+    isDark ? '#712B13' : '#E8926A',
+    isDark ? '#085041' : '#6BB88A',
+    isDark ? '#0C447C' : '#85B7EB',
+    isDark ? '#3C3489' : '#7F77DD'
+  ];
+  const labels2 = [
+    fmtM(wfNet),
+    '+' + fmtM(nutVal - wfNutShare * 1e6),
+    '+' + fmtM(peachVal - wfPeachShare * 1e6),
+    '+' + fmtM(openVal - wfOpenShare * 1e6),
+    fmtM(disaggTotal)
+  ];
+
+  if (waterfallChart) { waterfallChart.destroy(); waterfallChart = null; }
+
+  const ctx = document.getElementById('waterfall-chart').getContext('2d');
+  waterfallChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Base (invisible)',
+          data: bases,
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderColor: 'rgba(0,0,0,0)',
+          borderWidth: 0,
+          stack: 'stack'
+        },
+        {
+          label: 'Value',
+          data: values,
+          backgroundColor: colors,
+          borderColor: colors.map(c => c),
+          borderWidth: 0,
+          borderRadius: 3,
+          stack: 'stack',
+          datalabels: { display: false }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.datasetIndex === 0) return null;
+              return ' ' + labels2[ctx.dataIndex];
+            },
+            title: (items) => labels[items[0].dataIndex].replace('\n', ' ')
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: {
+            color: textCol,
+            font: { size: 10, family: "'DM Sans', sans-serif" },
+            callback: function(val, idx) { return labels[idx].split('\n'); }
+          }
+        },
+        y: {
+          stacked: true,
+          grid: { color: gridCol },
+          ticks: {
+            color: textCol,
+            font: { size: 10, family: "'DM Sans', sans-serif" },
+            callback: (v) => '$' + v.toFixed(1) + 'M'
+          },
+          title: { display: false }
+        }
+      }
+    }
+  });
+
+  // Legend
+  const leg = document.getElementById('waterfall-legend');
+  const legItems = [
+    { col: colors[0], label: 'Whole-farm sale: ' + fmtM(wfNet) },
+    { col: colors[1], label: 'Nut Block uplift: ' + fmtM(nutUplift * 1e6) },
+    { col: colors[2], label: 'Peach Block uplift: ' + fmtM(peachUplift * 1e6) },
+    { col: colors[3], label: 'Open Block uplift: ' + fmtM(openUplift * 1e6) },
+    { col: colors[4], label: 'Disaggregated total: ' + fmtM(disaggTotal) }
+  ];
+  leg.innerHTML = legItems.map(l =>
+    `<div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:${l.col};flex-shrink:0"></div>${l.label}</div>`
+  ).join('');
+}
+
+// Hook compare calc into other panel updates
+const origUpdateSummary = updateSummary;
+updateSummary = function() {
+  origUpdateSummary();
+  if (document.getElementById('panel-compare').classList.contains('visible')) {
+    calcCompare();
+  }
+};
+
+// Also hook tab switch to recalc on compare open
+const origShowPanel = showPanel;
+showPanel = function(id, btn) {
+  origShowPanel(id, btn);
+  if (id === 'compare') setTimeout(calcCompare, 50);
+  if (id === 'total') setTimeout(calcPortfolioIRR, 50);
+};
+
+</script>
+
+
+</body>
+</html>
